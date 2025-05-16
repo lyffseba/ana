@@ -81,8 +81,7 @@ ana/
    ```bash
    go mod download
    ```
-
-3. Set up PostgreSQL (follow instructions in next.md)
+3. Set up PostgreSQL (follow instructions in database_setup.md)
 
 4. Run the server:
    ```bash
@@ -103,8 +102,7 @@ ana/
    ```bash
    go mod download
    ```
-
-3. Configura PostgreSQL (sigue las instrucciones en next.md)
+3. Configura PostgreSQL (sigue las instrucciones en database_setup.md)
 
 4. Ejecuta el servidor:
    ```bash
@@ -116,12 +114,11 @@ ana/
 ## Project Origin | Origen del Proyecto
 
 This project was initially conceived in a Grok.com workspace named "ANA", where the comprehensive plan was developed. It aims to solve the specific challenges faced by architects managing multiple construction projects in Bogota, Colombia.
-
-The development flow is documented in [flow.md](flow.md), and the detailed plan in [plan.md](plan.md). The next implementation steps are outlined in [next.md](next.md).
+The development flow is documented in [flow.md](flow.md), and the detailed plan in [plan.md](plan.md). The next implementation steps are outlined in [next.md](next.md). Database setup instructions can be found in [database_setup.md](database_setup.md).
 
 Este proyecto fue concebido inicialmente en un espacio de trabajo de Grok.com llamado "ANA", donde se desarrolló el plan integral. Su objetivo es resolver los desafíos específicos que enfrentan los arquitectos que gestionan múltiples proyectos de construcción en Bogotá, Colombia.
 
-El flujo de desarrollo está documentado en [flow.md](flow.md), y el plan detallado en [plan.md](plan.md). Los próximos pasos de implementación se describen en [next.md](next.md).
+El flujo de desarrollo está documentado en [flow.md](flow.md), y el plan detallado en [plan.md](plan.md). Los próximos pasos de implementación se describen en [next.md](next.md). Las instrucciones para la configuración de la base de datos se encuentran en [database_setup.md](database_setup.md).
 
 ## Current Status | Estado Actual
 
@@ -131,6 +128,11 @@ The project is currently in Phase 1 of development. We have implemented:
 - Initial API endpoints for task management
 - Frontend with HTMX and Tailwind CSS integration
 - Simple routing for API and static files
+- PostgreSQL database integration with GORM ORM
+- Repository pattern for data access layer
+- Environment-based configuration
+- Documentation for database setup
+- Planning for Cerebras AI assistant integration
 
 El proyecto se encuentra actualmente en la Fase 1 de desarrollo. Hemos implementado:
 
@@ -138,6 +140,11 @@ El proyecto se encuentra actualmente en la Fase 1 de desarrollo. Hemos implement
 - Puntos finales iniciales de API para gestión de tareas
 - Frontend con integración de HTMX y Tailwind CSS
 - Enrutamiento simple para API y archivos estáticos
+- Integración de base de datos PostgreSQL con GORM ORM
+- Patrón de repositorio para capa de acceso a datos
+- Configuración basada en variables de entorno
+- Documentación para la configuración de la base de datos
+- Planificación para la integración del asistente IA de Cerebras
 
 ## Contact | Contacto
 

@@ -41,6 +41,13 @@ func SetupRouter() *gin.Engine {
 		{
 			agenda.GET("/today", handlers.GetTasksDueToday)
 		}
+		
+		// AI Assistant routes
+		ai := api.Group("/ai")
+		{
+			// Cerebras AI assistant endpoint
+			ai.POST("/cerebras", handlers.GetCerebrasAIAssistance)
+		}
 	}
 
 	// Handle frontend routes for development

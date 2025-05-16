@@ -2,7 +2,6 @@
 package repositories
 
 import (
-	"log"
 	"time"
 
 	"github.com/sebae/ana/internal/database"

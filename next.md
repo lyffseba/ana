@@ -80,7 +80,31 @@ We have completed the initial project setup as outlined in Phase 1 of our plan:
   - Add status update endpoints
   - Create frontend for marking tasks complete
 
-### 4. Deployment Preparation (Priority: Low)
+### 4. AI Assistant with Cerebras API (Priority: High)
+
+- [ ] **Set up Cerebras API integration**
+  - Register for Cerebras API access (https://inference.cerebras.ai/)
+  - Create API key and configure environment variables
+  - Implement API client in Go with proper error handling
+
+- [ ] **Design AI assistant interface**
+  - Create conversation model structure with user and AI messages
+  - Implement context-aware prompts with architectural domain knowledge
+  - Add message history management for coherent conversations
+
+- [ ] **Build assistant frontend**
+  - Design chat interface with HTMX for real-time updates
+  - Implement user input validation and response formatting
+  - Create responsive UI with terra color theme
+  - Add loading indicators for API requests
+
+- [ ] **Implement domain-specific features**
+  - Project context awareness (reference current projects in conversations)
+  - Support for architectural terminology in both English and Spanish
+  - Ability to suggest task creation from conversation
+  - Task scheduling assistant capabilities
+
+### 5. Deployment Preparation (Priority: Low)
 
 - [ ] **Configure Netlify deployment**
   - Refine netlify.toml configuration

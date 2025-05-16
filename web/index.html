@@ -186,9 +186,33 @@
                     </div>
                     <div id="task-list" class="space-y-4"></div>
                 </div>
-            </section>
-        </div>
-    </main>
+                
+                <!-- AI Assistant -->
+                <div class="bg-white rounded-lg shadow-md p-4 mt-6">
+                    <h2 class="text-xl font-bold mb-4 text-terra-800 border-b border-terra-200 pb-2">
+                        Asistente IA
+                    </h2>
+                    <div class="space-y-4">
+                        <div id="ai-chat-container" class="border border-gray-200 rounded-lg p-4 max-h-60 overflow-y-auto">
+                            <div id="ai-chat-messages" class="space-y-3">
+                                <div class="bg-terra-50 p-3 rounded-lg inline-block">
+                                    <p class="text-sm">¡Hola! Soy tu asistente virtual de ana.world. ¿Cómo puedo ayudarte con tus proyectos arquitectónicos hoy?</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <form id="ai-form" class="flex gap-2" hx-post="/api/ai/assistant" hx-target="#ai-response-container" hx-swap="beforeend" hx-indicator="#ai-loading">
+                            <input 
+                                type="text" 
+                                name="query" 
+                                id="ai-query" 
+                                class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-terra-500 focus:border-transparent"
+                                placeholder="Pregunta al asistente..."
+                                required
+                            >
+                            <button 
+                                type="submit"
+                                class="px-4 py-2 bg-olive-700 hover:bg-olive-800 text-white font-medium rounde
 
     <footer class="bg-terra-800 text-white p-4 mt-8">
         <div class="container mx-auto text-center text-sm">

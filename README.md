@@ -114,11 +114,11 @@ ana/
 ## Project Origin | Origen del Proyecto
 
 This project was initially conceived in a Grok.com workspace named "ANA", where the comprehensive plan was developed. It aims to solve the specific challenges faced by architects managing multiple construction projects in Bogota, Colombia.
-The development flow is documented in [flow.md](flow.md), and the detailed plan in [plan.md](plan.md). The next implementation steps are outlined in [next.md](next.md). Database setup instructions can be found in [database_setup.md](database_setup.md).
+The development flow is documented in [flow.md](flow.md), and the detailed plan in [plan.md](plan.md). The next implementation steps are outlined in [next.md](next.md). Database setup instructions can be found in [database_setup.md](database_setup.md). For details about the AI assistant integration, see [ai_integration.md](ai_integration.md).
 
 Este proyecto fue concebido inicialmente en un espacio de trabajo de Grok.com llamado "ANA", donde se desarrolló el plan integral. Su objetivo es resolver los desafíos específicos que enfrentan los arquitectos que gestionan múltiples proyectos de construcción en Bogotá, Colombia.
 
-El flujo de desarrollo está documentado en [flow.md](flow.md), y el plan detallado en [plan.md](plan.md). Los próximos pasos de implementación se describen en [next.md](next.md). Las instrucciones para la configuración de la base de datos se encuentran en [database_setup.md](database_setup.md).
+El flujo de desarrollo está documentado en [flow.md](flow.md), y el plan detallado en [plan.md](plan.md). Los próximos pasos de implementación se describen en [next.md](next.md). Las instrucciones para la configuración de la base de datos se encuentran en [database_setup.md](database_setup.md). Para obtener detalles sobre la integración del asistente de IA, consulta [ai_integration.md](ai_integration.md).
 
 ## Current Status | Estado Actual
 
@@ -132,7 +132,8 @@ The project is currently in Phase 1 of development. We have implemented:
 - Repository pattern for data access layer
 - Environment-based configuration
 - Documentation for database setup
-- Planning for Cerebras AI assistant integration
+- **Cerebras AI assistant integration** (see [ai_integration.md](ai_integration.md))
+- Testing scripts for database and AI verification
 
 El proyecto se encuentra actualmente en la Fase 1 de desarrollo. Hemos implementado:
 
@@ -144,7 +145,8 @@ El proyecto se encuentra actualmente en la Fase 1 de desarrollo. Hemos implement
 - Patrón de repositorio para capa de acceso a datos
 - Configuración basada en variables de entorno
 - Documentación para la configuración de la base de datos
-- Planificación para la integración del asistente IA de Cerebras
+- **Integración del asistente de IA Cerebras** (ver [ai_integration.md](ai_integration.md))
+- Scripts de prueba para verificación de base de datos e IA
 
 ## Contact | Contacto
 

@@ -1,0 +1,20 @@
+[build]
+  command = "./build.sh"
+  functions = "functions"
+  publish = "web"
+
+[build.environment]
+  GO_IMPORT_PATH = "github.com/sebae/ana"
+  GO111MODULE = "on"
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+
+# Redirect all traffic to index.html for SPA behavior
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+

@@ -1,0 +1,90 @@
+package server
+
+import (
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"github.com/sebae/ana/internal/handlers"
+)
+
+// SetupRouter configures all the routes for the application
+func SetupRouter() *gin.Engine {
+	r := gin.Default()
+
+	// Enable CORS
+	r.Use(func(c *gin.Context) {
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Origin, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
+		}
+		c.Next()
+	})
+
+	// API routes
+	api := r.Group("/api")
+	{
+		// Task routes
+		tasks := api.Group("/tasks")
+		{
+			tasks.GET("", handlers.GetTasks)
+			tasks.GET("/:id", handlers.GetTaskByID)
+			tasks.POST("", handlers.CreateTask)
+			tasks.PUT("/:id", handlers.UpdateTask)
+			tasks.DELETE("/:id", handlers.DeleteTask)
+		}
+
+		// Agenda routes
+		agenda := api.Group("/agenda")
+		{
+			agenda.GET("/today", handlers.GetTasksDueToday)
+		}
+	}
+
+	// Handle frontend routes for development
+	// Specifically handle index.html and other static assets
+	r.GET("/", func(c *gin.Context) {
+		c.File("./web/index.html")
+	})
+	
+	// Serve individual static files explicitly
+	r.GET("/favicon.ico", func(c *gin.Context) {
+		c.File("./web/favicon.ico")
+	})
+	
+	// For any other non-API routes, serve the SPA index.html
+	// This approach mimics how Netlify would handle SPA routing
+	r.NoRoute(func(c *gin.Context) {
+		path := c.Request.URL.Path
+		
+		// Don't handle API routes here
+		if len(path) >= 4 && path[:4] == "/api" {
+			c.JSON(http.StatusNotFound, gin.H{"error": "API endpoint not found"})
+			return
+		}
+		
+		// Check if the file exists in the web directory
+		if fileExists("./web" + path) {
+			c.File("./web" + path)
+			return
+		}
+		
+		// Default to serving index.html for client-side routing
+		c.File("./web/index.html")
+	})
+
+	return r
+}
+
+// fileExists checks if a file exists at the given path
+func fileExists(path string) bool {
+	info, err := http.Dir("./").Open(path)
+	if err != nil {
+		return false
+	}
+	info.Close()
+	return true
+}
+

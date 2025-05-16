@@ -1,80 +1,157 @@
 # ana.world
 
-A project management application designed for architects managing multiple projects. The application provides:
+[English](#english) | [Español](#español)
 
-- Daily agenda and task management
-- Comprehensive project views
-- Google Calendar integration
-- Supplier search functionality
-- Financial and document tracking
+<a name="english"></a>
+## Project Management for Architects
 
-## Technology Stack
+A specialized application designed for architects managing multiple construction projects in Bogota, Colombia. The platform combines task management, project tracking, and supplier search with a user-friendly interface.
 
-- **Frontend**: HTMX with minimal JavaScript, styled with Tailwind CSS
+### Key Features
+
+- **Daily Agenda**: View and manage tasks due today with clear prioritization
+- **Project Management**: Track multiple architecture projects with comprehensive details
+- **Google Calendar Integration**: Sync tasks and milestones with your Google Calendar
+- **Supplier Search**: Find architecture material suppliers in Bogota with location-based search
+- **Financial Tracking**: Monitor project budgets and expenses
+
+---
+
+<a name="español"></a>
+## Gestión de Proyectos para Arquitectos
+
+Una aplicación especializada diseñada para arquitectos que gestionan múltiples proyectos de construcción en Bogotá, Colombia. La plataforma combina gestión de tareas, seguimiento de proyectos y búsqueda de proveedores con una interfaz fácil de usar.
+
+### Características Principales
+
+- **Agenda Diaria**: Visualiza y gestiona tareas con vencimiento hoy con priorización clara
+- **Gestión de Proyectos**: Seguimiento de múltiples proyectos arquitectónicos con detalles completos
+- **Integración con Google Calendar**: Sincroniza tareas y eventos importantes con tu Google Calendar
+- **Búsqueda de Proveedores**: Encuentra proveedores de materiales arquitectónicos en Bogotá con búsqueda basada en ubicación
+- **Seguimiento Financiero**: Monitorea presupuestos y gastos de proyectos
+
+---
+
+## Technology Stack | Stack Tecnológico
+
+- **Frontend**: HTMX + Tailwind CSS (minimalist JavaScript approach)
 - **Backend**: Go with Gin framework
 - **Database**: PostgreSQL
-- **Hosting**: Netlify for frontend, with Go serverless functions or GCP for backend
+- **Hosting**: Netlify (frontend), with Go serverless functions or GCP (backend)
+- **APIs**: Google Calendar, Google Places API
 
-## Project Structure
+## Project Structure | Estructura del Proyecto
 
 ```
 ana/
-├── cmd/           # Application entry points
-│   └── server/    # Main server binary
-├── internal/      # Internal packages
-│   ├── handlers/  # HTTP handlers
-│   ├── models/    # Data models
-│   └── server/    # Server configuration
-├── web/           # Frontend static files
-├── functions/     # Netlify serverless functions
-├── db/            # Database migrations and schemas
-└── config/        # Configuration files
+├── cmd/                    # Application entry points | Puntos de entrada de la aplicación
+│   └── server/             # Main server binary | Binario principal del servidor
+├── internal/               # Internal packages | Paquetes internos
+│   ├── handlers/           # HTTP handlers | Manejadores HTTP
+│   ├── models/             # Data models | Modelos de datos
+│   ├── server/             # Server configuration | Configuración del servidor
+│   ├── database/           # Database connection | Conexión a base de datos
+│   └── repositories/       # Data access layer | Capa de acceso a datos
+├── web/                    # Frontend static files | Archivos estáticos del frontend
+├── functions/              # Netlify serverless functions | Funciones serverless para Netlify
+├── db/                     # Database migrations and schemas | Migraciones y esquemas de base de datos
+└── config/                 # Configuration files | Archivos de configuración
 ```
 
-## Development Setup
+## Setup Instructions | Instrucciones de Configuración
 
-### Prerequisites
+### Prerequisites | Requisitos Previos
 
-- Go 1.16+
-- PostgreSQL
-- Node.js (optional, for Netlify CLI)
+- Go 1.20+ 
+- PostgreSQL 14+
+- Node.js 18+ (optional, for Netlify CLI)
+- git
 
-### Local Development
+### Development Setup | Configuración de Desarrollo
+
+#### English:
 
 1. Clone the repository:
-   ```
-   git clone https://github.com/sebae/ana.git
+   ```bash
+   git clone https://github.com/juansgv/ana.git
    cd ana
    ```
 
 2. Install Go dependencies:
-   ```
+   ```bash
    go mod download
    ```
 
-3. Run the server:
-   ```
+3. Set up PostgreSQL (follow instructions in next.md)
+
+4. Run the server:
+   ```bash
    go run cmd/server/main.go
    ```
 
-4. Access the web interface at http://localhost:8080
+5. Access the web interface at http://localhost:8080
 
-## Deployment
+#### Español:
 
-### Netlify Deployment
+1. Clona el repositorio:
+   ```bash
+   git clone https://github.com/juansgv/ana.git
+   cd ana
+   ```
 
-1. Push changes to GitHub
-2. Netlify will automatically build and deploy from the connected repository
+2. Instala las dependencias de Go:
+   ```bash
+   go mod download
+   ```
 
-## Features
+3. Configura PostgreSQL (sigue las instrucciones en next.md)
 
-- **Daily Agenda**: View and manage daily tasks
-- **Project Management**: Track project details, progress, and documents
-- **Google Calendar Integration**: Sync tasks with calendar
-- **Supplier Search**: Find architecture material suppliers in Bogota
-- **Financial Tracking**: Monitor project budgets and expenses
+4. Ejecuta el servidor:
+   ```bash
+   go run cmd/server/main.go
+   ```
 
-## License
+5. Accede a la interfaz web en http://localhost:8080
 
-This project is proprietary and not licensed for public use.
+## Project Origin | Origen del Proyecto
+
+This project was initially conceived in a Grok.com workspace named "ANA", where the comprehensive plan was developed. It aims to solve the specific challenges faced by architects managing multiple construction projects in Bogota, Colombia.
+
+The development flow is documented in [flow.md](flow.md), and the detailed plan in [plan.md](plan.md). The next implementation steps are outlined in [next.md](next.md).
+
+Este proyecto fue concebido inicialmente en un espacio de trabajo de Grok.com llamado "ANA", donde se desarrolló el plan integral. Su objetivo es resolver los desafíos específicos que enfrentan los arquitectos que gestionan múltiples proyectos de construcción en Bogotá, Colombia.
+
+El flujo de desarrollo está documentado en [flow.md](flow.md), y el plan detallado en [plan.md](plan.md). Los próximos pasos de implementación se describen en [next.md](next.md).
+
+## Current Status | Estado Actual
+
+The project is currently in Phase 1 of development. We have implemented:
+
+- Basic project structure
+- Initial API endpoints for task management
+- Frontend with HTMX and Tailwind CSS integration
+- Simple routing for API and static files
+
+El proyecto se encuentra actualmente en la Fase 1 de desarrollo. Hemos implementado:
+
+- Estructura básica del proyecto
+- Puntos finales iniciales de API para gestión de tareas
+- Frontend con integración de HTMX y Tailwind CSS
+- Enrutamiento simple para API y archivos estáticos
+
+## Contact | Contacto
+
+For questions or contributions, please contact:
+
+Para preguntas o contribuciones, por favor contacta:
+
+- **Project Owner**: Ana Architect
+- **Email**: [ana@example.com](mailto:ana@example.com)
+- **GitHub**: [@juansgv](https://github.com/juansgv)
+
+## License | Licencia
+
+This project is proprietary and intended for specific use. Not licensed for public redistribution.
+
+Este proyecto es propietario y está destinado para uso específico. No está licenciado para redistribución pública.
 

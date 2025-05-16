@@ -42,10 +42,11 @@ func SetupRouter() *gin.Engine {
 			agenda.GET("/today", handlers.GetTasksDueToday)
 		}
 		
-		// AI Assistant route
+		// AI Assistant routes
 		ai := api.Group("/ai")
 		{
-			ai.POST("/assistant", handlers.GetAIAssistance)
+			// Cerebras AI assistant endpoint
+			ai.POST("/cerebras", handlers.GetCerebrasAIAssistance)
 		}
 	}
 

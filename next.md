@@ -13,7 +13,44 @@ We have completed the initial project setup as outlined in Phase 1 of our plan:
 
 ## Next Implementation Steps
 
-### 1. PostgreSQL Database Integration (Priority: High)
+### 1. Google Calendar and Gmail Integration (Priority: Highest)
+
+- [ ] **Set up Google Cloud Project**
+  - Create a new Google Cloud project for ana.world
+  - Enable Google Calendar API and Gmail API
+  - Configure OAuth 2.0 consent screen for anais.villamarinj@gmail.com
+  - Create API keys and client secrets
+  - Refer to [google_calendar_gmail.md](google_calendar_gmail.md) for detailed setup instructions
+
+- [ ] **Implement Gmail integration for anais.villamarinj@gmail.com**
+  - Set up OAuth 2.0 flow with proper scopes
+  - Create email notification system for project updates
+  - Implement email sending for task reminders
+  - Add support for email-based task creation
+  - Design bilingual email templates (English/Spanish)
+
+- [ ] **Implement Google Calendar integration**
+  - Sync project timelines and milestones to Google Calendar
+  - Create calendar events for task deadlines
+  - Set up bidirectional sync between app tasks and calendar events
+  - Configure recurring events for regular project check-ins
+  - Use color coding for task priorities (Red=High, Yellow=Medium, Blue=Low)
+
+- [ ] **Build UI for Google integrations**
+  - Add OAuth authorization flow in the frontend
+  - Create settings page for managing Google integrations
+  - Implement calendar viewing interface embedded in the app
+  - Add email preference configuration options
+
+- [ ] **Ensure data security and privacy**
+  - Implement token storage with proper encryption
+  - Set up token refresh mechanism
+  - Create permission scopes with least privilege principle
+  - Add clear documentation on data access and usage
+
+See [google_calendar_gmail.md](google_calendar_gmail.md) for detailed implementation plan and timeline.
+
+### 2. PostgreSQL Database Integration (Priority: High)
 
 - [ ] **Install and configure PostgreSQL**
   - Install PostgreSQL 14+ locally for development
@@ -80,7 +117,7 @@ We have completed the initial project setup as outlined in Phase 1 of our plan:
   - Add status update endpoints
   - Create frontend for marking tasks complete
 
-### 4. AI Assistant with Cerebras API (Priority: High)
+### 4. AI Assistant with Cerebras API (Priority: Medium)
 
 - [ ] **Set up Cerebras API integration**
   - Register for Cerebras API access (https://inference.cerebras.ai/)
@@ -152,7 +189,107 @@ We have completed the initial project setup as outlined in Phase 1 of our plan:
    - Use vulnerability scanning tools
    - Follow security advisories for key packages
 
-## Implementation Approach for PostgreSQL Setup
+## Implementation Approach for Key Features
+
+### Implementation Approach for Google Calendar & Gmail Integration
+
+#### Week 1: OAuth and Configuration Setup
+
+```bash
+# Install required Go packages
+go get -u google.golang.org/api/calendar/v3
+go get -u google.golang.org/api/gmail/v1
+go get -u golang.org/x/oauth2/google
+```
+
+1. Create a basic OAuth flow for Google account:
+
+```go
+// internal/google/auth.go
+package google
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"net/http"
+	"os"
+
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
+)
+
+// GetConfig returns a config for OAuth2 authentication
+func GetConfig(scopes []string) (*oauth2.Config, error) {
+	b, err := ioutil.ReadFile("credentials.json")
+	if err != nil {
+		return nil, fmt.Errorf("unable to read client credentials file: %v", err)
+	}
+
+	config, err := google.ConfigFromJSON(b, scopes...)
+	if err != nil {
+		return nil, fmt.Errorf("unable to parse client credentials file: %v", err)
+	}
+
+	return config, nil
+}
+
+// GetTokenFromWeb gets a token from the web flow
+func GetTokenFromWeb(config *oauth2.Config) (*oauth2.Token, error) {
+	authURL := config.AuthCodeURL("state-token", oauth2.AccessTypeOffline)
+	fmt.Printf("Go to the following URL and enter the authorization code: \n%v\n", authURL)
+
+	var authCode string
+	if _, err := fmt.Scan(&authCode); err != nil {
+		return nil, fmt.Errorf("unable to read authorization code: %v", err)
+	}
+
+	tok, err := config.Exchange(context.Background(), authCode)
+	if err != nil {
+		return nil, fmt.Errorf("unable to retrieve token from web: %v", err)
+	}
+	return tok, nil
+}
+```
+
+2. Set up environment variables for the project:
+
+```bash
+# Add to .env file
+GOOGLE_CLIENT_ID=your_client_id_here
+GOOGLE_CLIENT_SECRET=your_client_secret_here
+GOOGLE_REDIRECT_URI=http://localhost:8080/api/auth/google/callback
+GOOGLE_PRIMARY_EMAIL=anais.villamarinj@gmail.com
+```
+
+3. Create handlers for OAuth authentication flow:
+
+```go
+// internal/handlers/google_auth_handler.go
+package handlers
+
+import (
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"github.com/sebae/ana/internal/google"
+)
+
+// GoogleAuthHandler initiates the OAuth flow
+func GoogleAuthHandler(c *gin.Context) {
+	// Implement OAuth flow initiation
+}
+
+// GoogleCallbackHandler handles the OAuth callback
+func GoogleCallbackHandler(c *gin.Context) {
+	// Implement OAuth callback handling
+}
+```
+
+See [google_calendar_gmail.md](google_calendar_gmail.md) for complete implementation details.
+
+### Implementation Approach for PostgreSQL Setup
 
 ### Step 1: Install PostgreSQL
 
@@ -333,6 +470,12 @@ func (r *TaskRepository) FindTasksDueToday() ([]models.Task, error) {
 ### HTMX + Go Integration
 - [HTMX Go Examples](https://htmx.org/examples/) - Official HTMX examples that can be adapted for Go
 - [go-htmx Package](https://github.com/donseba/go-htmx) - Go package for HTMX integration
+
+### Google APIs Integration
+- [Google Calendar API Go Quickstart](https://developers.google.com/calendar/api/quickstart/go) - Official quickstart guide
+- [Gmail API Go Quickstart](https://developers.google.com/gmail/api/quickstart/go) - Official quickstart guide
+- [Google OAuth2 Go Documentation](https://pkg.go.dev/golang.org/x/oauth2/google) - Go package documentation
+- [Using OAuth 2.0 to Access Google APIs](https://developers.google.com/identity/protocols/oauth2) - Comprehensive guide
 
 ### Deployment
 - [Netlify Go Functions](https://docs.netlify.com/functions/build-with-go/) - Official guide for Go functions on Netlify

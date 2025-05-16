@@ -2,19 +2,27 @@ package models
 
 import (
 	"time"
+
+	"gorm.io/gorm"
 )
 
 // Task represents a task in the system
 type Task struct {
-	ID          int       `json:"id"`
-	Title       string    `json:"title" binding:"required"`
-	Description string    `json:"description"`
-	DueDate     time.Time `json:"due_date"`
-	Priority    string    `json:"priority" binding:"oneof=Low Medium High''"`
-	ProjectID   int       `json:"project_id"`
-	Status      string    `json:"status" binding:"oneof=To-Do In-Progress Done''"`
-	CreatedAt   time.Time `json:"created_at,omitempty"`
-	UpdatedAt   time.Time `json:"updated_at,omitempty"`
+	ID          uint           `json:"id" gorm:"primaryKey"`
+	Title       string         `json:"title" gorm:"size:255;not null" binding:"required"`
+	Description string         `json:"description" gorm:"type:text"`
+	DueDate     time.Time      `json:"due_date" gorm:"index"`
+	Priority    string         `json:"priority" gorm:"size:50" binding:"oneof=Low Medium High''"`
+	ProjectID   int            `json:"project_id" gorm:"index"`
+	Status      string         `json:"status" gorm:"size:50;index" binding:"oneof=To-Do In-Progress Done''"`
+	CreatedAt   time.Time      `json:"created_at,omitempty" gorm:"autoCreateTime"`
+	UpdatedAt   time.Time      `json:"updated_at,omitempty" gorm:"autoUpdateTime"`
+	DeletedAt   gorm.DeletedAt `json:"-" gorm:"index"` // Supports soft delete
+}
+
+// TableName specifies the table name for the Task model
+func (Task) TableName() string {
+	return "tasks"
 }
 
 // MockTasks provides some sample tasks for development

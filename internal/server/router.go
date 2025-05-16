@@ -41,6 +41,12 @@ func SetupRouter() *gin.Engine {
 		{
 			agenda.GET("/today", handlers.GetTasksDueToday)
 		}
+		
+		// AI Assistant route
+		ai := api.Group("/ai")
+		{
+			ai.POST("/assistant", handlers.GetAIAssistance)
+		}
 	}
 
 	// Handle frontend routes for development

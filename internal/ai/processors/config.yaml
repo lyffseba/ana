@@ -1,0 +1,38 @@
+# AI Processor Configuration
+# Reference: https://app.warp.dev/session/b660fd8a-f765-449c-a70c-f8c7b971e3c4?pwd=e9ccd7cb-d8be-494e-a2f2-35469f726896
+
+processors:
+  cerebras:
+    endpoint: ${CEREBRAS_ENDPOINT}
+    api_key: ${CEREBRAS_API_KEY}
+    model_id: "cerebras-gpt-1.3b"
+    max_tokens: 1000
+    temperature: 0.7
+    options:
+      cache_results: true
+      timeout: 30s
+      retries: 3
+
+monitoring:
+  metrics:
+    enabled: true
+    interval: 60s
+    exporters:
+      - prometheus
+      - datadog
+  alerts:
+    enabled: true
+    thresholds:
+      error_rate: 0.01
+      latency: 200ms
+
+cache:
+  enabled: true
+  type: redis
+  ttl: 3600s
+  max_size: "1GB"
+
+logging:
+  level: info
+  format: json
+  output: stdout

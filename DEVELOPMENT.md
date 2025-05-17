@@ -88,3 +88,30 @@ curl http://localhost:8000/health
 - Channel: #repository-monitoring
 - Email: juansg777@gmail.com
 
+
+## Monitoring Integration
+
+This repository integrates with the standardized monitoring system:
+
+### Repository Health Checks
+- API endpoint monitoring
+- Service health status
+- Dependency status
+
+### Integration Points
+- GitHub workflows
+- Health check endpoints
+- Monitoring dashboard
+
+### Monitoring Commands
+```bash
+# Check repository health
+curl http://localhost:5001/repos/ana
+
+# View health check configuration
+cat .health-check.yaml
+```
+
+### Reference Links
+- [Monitoring Documentation](MONITORING.md)
+- [Repository Monitor Dashboard](http://localhost:5001/dashboard)

@@ -2,14 +2,50 @@ package server
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sebae/ana/internal/handlers"
+	"github.com/sebae/ana/internal/monitoring"
 )
+
+// MetricsMiddleware adds request metrics collection
+func MetricsMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// Skip metrics collection for monitoring endpoints to avoid circular reporting
+		path := c.Request.URL.Path
+		if path == "/metrics" || path == "/health" || path == "/stats" {
+			c.Next()
+			return
+		}
+
+		// Start timer
+		start := time.Now()
+		
+		// Process request
+		c.Next()
+		
+		// Stop timer and collect metrics
+		duration := time.Since(start)
+		statusCode := c.Writer.Status()
+		endpoint := path
+		
+		// Record metrics
+		monitoring.RecordRequestDuration("api", endpoint, statusCode, duration)
+		
+		// Record errors if any
+		if statusCode >= 400 {
+			monitoring.RecordError("api", http.StatusText(statusCode))
+		}
+	}
+}
 
 // SetupRouter configures all the routes for the application
 func SetupRouter() *gin.Engine {
 	r := gin.Default()
+	
+	// Add metrics middleware
+	r.Use(MetricsMiddleware())
 
 	// Enable CORS
 	r.Use(func(c *gin.Context) {
@@ -49,6 +85,14 @@ func SetupRouter() *gin.Engine {
 			ai.POST("/cerebras", handlers.GetCerebrasAIAssistance)
 		}
 	}
+	
+	// Monitoring routes
+	monitoring.RegisterHealthEndpoint(r)
+	monitoring.RegisterMetricsEndpoint(r)
+	monitoring.RegisterStatsEndpoint(r)
+	
+	// Register handlers for Cerebras monitoring endpoints
+	handlers.RegisterCerebrasRoutes(r)
 
 	// Handle frontend routes for development
 	// Specifically handle index.html and other static assets

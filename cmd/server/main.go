@@ -8,6 +8,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/sebae/ana/internal/database"
 	"github.com/sebae/ana/internal/models"
+	"github.com/sebae/ana/internal/monitoring"
 	"github.com/sebae/ana/internal/repositories"
 	"github.com/sebae/ana/internal/server"
 )
@@ -33,6 +34,13 @@ func main() {
 	if err := seedInitialData(taskRepo); err != nil {
 		log.Printf("Warning: Failed to seed initial data: %v", err)
 	}
+	
+	// Initialize monitoring
+	log.Println("Initializing monitoring system...")
+	monitoring.Init()
+	
+	// Set up initial monitoring stats
+	setupInitialMonitoringStats()
 
 	// Initialize and start the server
 	r := server.SetupRouter()
@@ -86,3 +94,38 @@ func seedInitialData(taskRepo *repositories.TaskRepository) error {
 	return nil
 }
 
+// setupInitialMonitoringStats initializes monitoring statistics
+func setupInitialMonitoringStats() {
+	// Initialize AI service stats
+	aiStats := monitoring.ServiceStats{
+		CacheStats: monitoring.CacheStats{
+			Size:         0,
+			HitRate:      0.0,
+			HitCount:     0,
+			MissCount:    0,
+			AvgValueSize: 0,
+		},
+		CircuitStats: monitoring.CircuitStats{
+			State:        "closed",
+			FailureCount: 0,
+			ResetTimeout: "60s",
+		},
+		PerformanceStats: monitoring.PerformanceStats{
+			AvgResponseTime: 0.0,
+			RequestCount:    0,
+		},
+		ErrorStats: monitoring.ErrorStats{
+			ErrorCount:          0,
+			CircuitBreakerOpens: 0,
+			RateLimitRejections: 0,
+		},
+	}
+	
+	// Register AI service stats
+	monitoring.UpdateServiceStats("cerebras", aiStats)
+	
+	// Set circuit breaker state
+	monitoring.SetCircuitBreakerState("cerebras", false)
+	
+	log.Println("Monitoring system initialized")
+}

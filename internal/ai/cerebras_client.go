@@ -3,26 +3,111 @@ package ai
 
 import (
 	"bytes"
+	"context"
+	"crypto/md5"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
+	"sync"
 	"time"
+
+	"github.com/hashicorp/go-retryablehttp"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+	"golang.org/x/sync/semaphore"
 )
 
 const (
 	defaultCerebrasAPIURL = "https://inference.cerebras.ai/v1/chat/completions"
 	defaultTimeout        = 30 * time.Second
+	defaultCacheTTL       = 15 * time.Minute
+	defaultMaxRetries     = 3
+	defaultMaxConcurrent  = 10
 )
+
+// CachedResponse represents a cached API response
+type CachedResponse struct {
+	Response string
+	Expiry   time.Time
+}
+
+// CircuitBreakerState tracks the circuit breaker state
+type CircuitBreakerState struct {
+	Failures       int
+	LastFailure    time.Time
+	Open           bool
+	OpenUntil      time.Time
+	ThresholdCount int
+	ResetTimeout   time.Duration
+	mutex          sync.RWMutex
+}
 
 // CerebrasClient handles communication with the Cerebras AI API
 type CerebrasClient struct {
-	apiKey     string
-	apiURL     string
-	httpClient *http.Client
+	apiKey            string
+	apiURL            string
+	httpClient        *retryablehttp.Client
+	cache             map[string]CachedResponse
+	cacheTTL          time.Duration
+	cacheMutex        sync.RWMutex
+	circuitBreaker    CircuitBreakerState
+	concurrencyLimiter *semaphore.Weighted
+	metricsEnabled    bool
 }
+
+// metrics for monitoring client performance
+var (
+	requestDuration = promauto.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name: "cerebras_request_duration_seconds",
+			Help: "Duration of requests to Cerebras API",
+			Buckets: prometheus.DefBuckets,
+		},
+		[]string{"endpoint", "status"},
+	)
+	
+	tokenUsage = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "cerebras_token_usage_total",
+			Help: "Token usage stats for Cerebras API requests",
+		},
+		[]string{"type"},
+	)
+	
+	cacheHits = promauto.NewCounter(
+		prometheus.CounterOpts{
+			Name: "cerebras_cache_hits_total",
+			Help: "Number of cache hits",
+		},
+	)
+	
+	cacheMisses = promauto.NewCounter(
+		prometheus.CounterOpts{
+			Name: "cerebras_cache_misses_total",
+			Help: "Number of cache misses",
+		},
+	)
+	
+	errorCounter = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "cerebras_errors_total",
+			Help: "Number of errors when calling Cerebras API",
+		},
+		[]string{"type"},
+	)
+
+	batchSize = promauto.NewHistogram(
+		prometheus.HistogramOpts{
+			Name: "cerebras_batch_size",
+			Help: "Size of batched requests to Cerebras API",
+			Buckets: []float64{1, 2, 5, 10, 20},
+		},
+	)
+)
 
 // Message represents a chat message
 type Message struct {
@@ -62,46 +147,209 @@ func NewCerebrasClient() *CerebrasClient {
 		log.Println("Warning: CEREBRAS_API_KEY not set. AI assistant functionality will not work")
 	}
 
+	// Create retry client for more robust error handling
+	retryClient := retryablehttp.NewClient()
+	retryClient.RetryMax = defaultMaxRetries
+	retryClient.RetryWaitMin = 1 * time.Second
+	retryClient.RetryWaitMax = 5 * time.Second
+	retryClient.Logger = nil // Disable default logger
+	standardClient := retryClient.StandardClient()
+	standardClient.Timeout = defaultTimeout
+
+	// Create circuit breaker
+	circuitBreaker := CircuitBreakerState{
+		ThresholdCount: 5,
+		ResetTimeout:   60 * time.Second,
+	}
+
+	// Enable metrics based on env var
+	metricsEnabled := getEnv("ENABLE_CEREBRAS_METRICS", "false") == "true"
+
 	return &CerebrasClient{
-		apiKey: apiKey,
-		apiURL: getEnv("CEREBRAS_API_URL", defaultCerebrasAPIURL),
-		httpClient: &http.Client{
-			Timeout: defaultTimeout,
-		},
+		apiKey:            apiKey,
+		apiURL:            getEnv("CEREBRAS_API_URL", defaultCerebrasAPIURL),
+		httpClient:        retryClient,
+		cache:             make(map[string]CachedResponse),
+		cacheTTL:          parseDuration(getEnv("CEREBRAS_CACHE_TTL", "15m"), defaultCacheTTL),
+		circuitBreaker:    circuitBreaker,
+		concurrencyLimiter: semaphore.NewWeighted(int64(defaultMaxConcurrent)),
+		metricsEnabled:    metricsEnabled,
 	}
 }
 
-// GenerateTextResponse generates a response to a text-only query
-func (c *CerebrasClient) GenerateTextResponse(userQuery string, model string, conversationContext []Message) (string, error) {
-	if c.apiKey == "" {
-		return "Lo sentimos, el asistente de arquitectura no está disponible en este momento. Por favor contacta al administrador para activar esta funcionalidad.", nil
-	}
-
-	// Create a context with user's query
-	messages := append(conversationContext, Message{
-		Role:    "user",
-		Content: userQuery,
-	})
-
-	// Create the request body
-	requestBody := ChatCompletionRequest{
-		Model:       model,
-		Messages:    messages,
-		Temperature: 0.7,
-		MaxTokens:   500,
-	}
-
-	// Convert to JSON
-	requestBytes, err := json.Marshal(requestBody)
+// parseDuration parses a duration string and returns a fallback if parsing fails
+func parseDuration(durationStr string, fallback time.Duration) time.Duration {
+	duration, err := time.ParseDuration(durationStr)
 	if err != nil {
-		return "", fmt.Errorf("failed to marshal request: %w", err)
+		return fallback
+	}
+	return duration
+}
+
+// computeCacheKey generates a unique key for caching based on the request
+func computeCacheKey(model string, messages []Message) string {
+	// Marshal only what matters for caching
+	data := struct {
+		Model    string    `json:"model"`
+		Messages []Message `json:"messages"`
+	}{
+		Model:    model,
+		Messages: messages,
+	}
+	
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		// If marshaling fails, use a simpler approach
+		var key string
+		key = model
+		for _, msg := range messages {
+			key += ":" + msg.Role + ":" + msg.Content
+		}
+		return key
+	}
+	
+	hash := md5.Sum(jsonData)
+	return hex.EncodeToString(hash[:])
+}
+
+// getCachedResponse retrieves a response from cache if available
+func (c *CerebrasClient) getCachedResponse(model string, messages []Message) (string, bool) {
+	if !isCacheable(messages) {
+		return "", false
 	}
 
-	// Create the HTTP request
-	req, err := http.NewRequest("POST", c.apiURL, bytes.NewBuffer(requestBytes))
-	if err != nil {
-		return "", fmt.Errorf("failed to create request: %w", err)
+	cacheKey := computeCacheKey(model, messages)
+	
+	c.cacheMutex.RLock()
+	defer c.cacheMutex.RUnlock()
+	
+	if cached, exists := c.cache[cacheKey]; exists {
+		if time.Now().Before(cached.Expiry) {
+			if c.metricsEnabled {
+				cacheHits.Inc()
+			}
+			return cached.Response, true
+		}
 	}
+	
+	if c.metricsEnabled {
+		cacheMisses.Inc()
+	}
+	return "", false
+}
+
+// setCachedResponse stores a response in the cache
+func (c *CerebrasClient) setCachedResponse(model string, messages []Message, response string) {
+	if !isCacheable(messages) {
+		return
+	}
+	
+	cacheKey := computeCacheKey(model, messages)
+	
+	c.cacheMutex.Lock()
+	defer c.cacheMutex.Unlock()
+	
+	c.cache[cacheKey] = CachedResponse{
+		Response: response,
+		Expiry:   time.Now().Add(c.cacheTTL),
+	}
+	
+	// Prune expired entries occasionally
+	if rand.Intn(100) < 5 { // 5% chance to clean up on each set
+		c.pruneExpiredCache()
+	}
+}
+
+// pruneExpiredCache removes expired entries from the cache
+func (c *CerebrasClient) pruneExpiredCache() {
+	now := time.Now()
+	for key, cached := range c.cache {
+		if now.After(cached.Expiry) {
+			delete(c.cache, key)
+		}
+	}
+}
+
+// isCacheable determines if a request should be cached
+// Some requests shouldn't be cached, like those containing
+// timestamps or randomness instructions
+func isCacheable(messages []Message) bool {
+	// Don't cache empty requests
+	if len(messages) == 0 {
+		return false
+	}
+	
+	// Check last user message for non-cacheable patterns
+	lastUserMsgIdx := -1
+	for i := len(messages) - 1; i >= 0; i-- {
+		if messages[i].Role == "user" {
+			lastUserMsgIdx = i
+			break
+		}
+	}
+	
+	if lastUserMsgIdx == -1 {
+		return false
+	}
+	
+	userMsg := messages[lastUserMsgIdx].Content
+	nonCacheablePatterns := []string{
+		"random", 
+		"current time",
+		"current date",
+		"today",
+		"time is",
+		"date is",
+	}
+	
+	for _, pattern := range nonCacheablePatterns {
+		if strings.Contains(strings.ToLower(userMsg), pattern) {
+			return false
+		}
+	}
+	
+	return true
+}
+
+// checkCircuitBreaker determines if requests should be allowed based on failure history
+func (c *CerebrasClient) checkCircuitBreaker() error {
+	c.circuitBreaker.mutex.RLock()
+	defer c.circuitBreaker.mutex.RUnlock()
+	
+	if c.circuitBreaker.Open {
+		if time.Now().Before(c.circuitBreaker.OpenUntil) {
+			return fmt.Errorf("circuit breaker is open until %v", c.circuitBreaker.OpenUntil)
+		}
+	}
+	
+	return nil
+}
+
+// recordSuccess resets the failure counter on successful API calls
+func (c *CerebrasClient) recordSuccess() {
+	c.circuitBreaker.mutex.Lock()
+	defer c.circuitBreaker.mutex.Unlock()
+	
+	c.circuitBreaker.Failures = 0
+	c.circuitBreaker.Open = false
+}
+
+// recordFailure tracks API failures and opens circuit breaker if threshold is exceeded
+func (c *CerebrasClient) recordFailure() {
+	c.circuitBreaker.mutex.Lock()
+	defer c.circuitBreaker.mutex.Unlock()
+	
+	c.circuitBreaker.Failures++
+	c.circuitBreaker.LastFailure = time.Now()
+	
+	if c.circuitBreaker.Failures >= c.circuitBreaker.ThresholdCount {
+		c.circuitBreaker.Open = true
+		c.circuitBreaker.OpenUntil = time.Now().Add(c.circuitBreaker.ResetTimeout)
+		log.Printf("Circuit breaker opened until %v after %d failures", 
+			c.circuitBreaker.OpenUntil, c.circuitBreaker.Failures)
+	}
+}
+
 
 	// Set headers
 	req.Header.Set("Content-Type", "application/json")

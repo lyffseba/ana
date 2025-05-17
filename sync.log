@@ -1,0 +1,6 @@
+2025-05-17 08:03:21,753 - ana.sync - INFO - Starting auto-sync system
+2025-05-17 08:03:21,753 - ana.sync - INFO - Checking for changes...
+2025-05-17 08:03:21,757 - ana.sync - INFO - Changes detected
+2025-05-17 08:03:21,757 - ana.sync - INFO - Running tests...
+2025-05-17 08:03:21,790 - ana.sync - ERROR - Tests failed: Command '['go', 'test', './...']' returned non-zero exit status 1.
+2025-05-17 08:03:21,791 - ana.sync - ERROR - Error handling changes: Command '['go', 'test', './...']' returned non-zero exit status 1.

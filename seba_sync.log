@@ -1,0 +1,43 @@
+2025-05-17 08:07:35,603 - seba.sync - INFO - Starting SEBA projects review
+2025-05-17 08:07:35,604 - seba.sync - INFO - Found 13 repositories
+2025-05-17 08:07:35,604 - seba.sync - INFO - Processing repository: arc
+2025-05-17 08:07:35,604 - seba.sync - INFO - Updating repository from remote
+2025-05-17 08:07:38,227 - seba.sync - INFO - Updating documentation
+2025-05-17 08:07:38,227 - seba.sync - INFO - Setting up GitHub Actions
+2025-05-17 08:07:38,227 - seba.sync - INFO - Committing and pushing changes
+2025-05-17 08:07:38,229 - seba.sync - INFO - No changes to commit
+2025-05-17 08:07:38,229 - seba.sync - INFO - Processing repository: mlx
+2025-05-17 08:07:38,229 - seba.sync - INFO - Updating repository from remote
+2025-05-17 08:07:40,758 - seba.sync - INFO - Processing JavaScript repository
+2025-05-17 08:07:41,927 - seba.sync - ERROR - Error processing JavaScript repository: Command '['npm', 'run', 'format']' returned non-zero exit status 1.
+2025-05-17 08:07:41,928 - seba.sync - INFO - Updating documentation
+2025-05-17 08:07:41,928 - seba.sync - INFO - Setting up GitHub Actions
+2025-05-17 08:07:41,929 - seba.sync - INFO - Committing and pushing changes
+2025-05-17 08:07:41,936 - seba.sync - INFO - No changes to commit
+2025-05-17 08:07:41,936 - seba.sync - INFO - Processing repository: 42projects
+2025-05-17 08:07:41,936 - seba.sync - INFO - Updating repository from remote
+2025-05-17 08:07:43,245 - seba.sync - INFO - Updating documentation
+2025-05-17 08:07:43,245 - seba.sync - INFO - Setting up GitHub Actions
+2025-05-17 08:07:43,245 - seba.sync - INFO - Committing and pushing changes
+2025-05-17 08:07:43,247 - seba.sync - INFO - No changes to commit
+2025-05-17 08:07:43,248 - seba.sync - INFO - Processing repository: lyff
+2025-05-17 08:07:43,248 - seba.sync - INFO - Updating repository from remote
+2025-05-17 08:07:45,784 - seba.sync - INFO - Processing Python repository
+2025-05-17 08:07:46,486 - seba.sync - ERROR - Error processing Python repository: [Errno 2] No such file or directory: 'black'
+2025-05-17 08:07:46,486 - seba.sync - INFO - Updating documentation
+2025-05-17 08:07:46,486 - seba.sync - INFO - Setting up GitHub Actions
+2025-05-17 08:07:46,486 - seba.sync - INFO - Committing and pushing changes
+2025-05-17 08:07:46,491 - seba.sync - INFO - No changes to commit
+2025-05-17 08:07:46,491 - seba.sync - INFO - Processing repository: lho
+2025-05-17 08:07:46,491 - seba.sync - INFO - Updating repository from remote
+2025-05-17 08:07:49,141 - seba.sync - INFO - Updating documentation
+2025-05-17 08:07:49,141 - seba.sync - INFO - Setting up GitHub Actions
+2025-05-17 08:07:49,141 - seba.sync - INFO - Committing and pushing changes
+2025-05-17 08:07:49,144 - seba.sync - INFO - No changes to commit
+2025-05-17 08:07:49,144 - seba.sync - INFO - Processing repository: ana
+2025-05-17 08:07:49,144 - seba.sync - INFO - Updating repository from remote
+2025-05-17 08:07:50,326 - seba.sync - INFO - Processing Go repository
+2025-05-17 08:07:51,634 - seba.sync - ERROR - Error processing Go repository: Command '['go', 'mod', 'tidy']' returned non-zero exit status 1.
+2025-05-17 08:07:51,634 - seba.sync - INFO - Updating documentation
+2025-05-17 08:07:51,634 - seba.sync - INFO - Setting up GitHub Actions
+2025-05-17 08:07:51,634 - seba.sync - INFO - Committing and pushing changes

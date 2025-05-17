@@ -3,7 +3,8 @@ Reference: https://app.warp.dev/session/b660fd8a-f765-449c-a70c-f8c7b971e3c4?pwd
 
 ## Overview
 Repository: ana
-Last Updated: 2025-05-17 07:45:56
+Language: go
+Last Updated: 2025-05-17 12:39:45
 
 ## Setup
 1. Clone repository
@@ -16,15 +17,3 @@ Last Updated: 2025-05-17 07:45:56
 - Implement changes
 - Run tests
 - Create pull request
-
-## Testing
-\`\`\`bash
-# Run tests
-./test.sh
-\`\`\`
-
-## Deployment
-\`\`\`bash
-# Deploy
-./deploy.sh
-\`\`\`

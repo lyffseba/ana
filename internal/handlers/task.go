@@ -9,8 +9,8 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/sebae/ana/internal/models"
-	"github.com/sebae/ana/internal/repositories"
+	"github.com/lyffseba/ana/internal/models"
+	"github.com/lyffseba/ana/internal/repositories"
 )
 
 // taskRepo is the repository for task operations

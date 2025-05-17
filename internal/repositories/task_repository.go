@@ -7,8 +7,8 @@ package repositories
 import (
 	"time"
 
-	"github.com/sebae/ana/internal/database"
-	"github.com/sebae/ana/internal/models"
+	"github.com/lyffseba/ana/internal/database"
+	"github.com/lyffseba/ana/internal/models"
 )
 
 // TaskRepository handles database operations for tasks

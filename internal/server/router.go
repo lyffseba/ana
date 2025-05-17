@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/sebae/ana/internal/handlers"
-	"github.com/sebae/ana/internal/monitoring"
+	"github.com/lyffseba/ana/internal/handlers"
+	"github.com/lyffseba/ana/internal/monitoring"
 )
 
 // MetricsMiddleware adds request metrics collection

@@ -9,11 +9,11 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
-	"github.com/sebae/ana/internal/database"
-	"github.com/sebae/ana/internal/models"
-	"github.com/sebae/ana/internal/monitoring"
-	"github.com/sebae/ana/internal/repositories"
-	"github.com/sebae/ana/internal/server"
+	"github.com/lyffseba/ana/internal/database"
+	"github.com/lyffseba/ana/internal/models"
+	"github.com/lyffseba/ana/internal/monitoring"
+	"github.com/lyffseba/ana/internal/repositories"
+	"github.com/lyffseba/ana/internal/server"
 )
 
 func main() {

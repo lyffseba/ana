@@ -1,5 +1,5 @@
-// Reference: https://app.warp.dev/session/b660fd8a-f765-449c-a70c-f8c7b971e3c4?pwd=e9ccd7cb-d8be-494e-a2f2-35469f726896
-// Last Updated: Sat May 17 07:34:44 AM CEST 2025
+// Reference: https://app.warp.dev/session/b660fd8a-f765-449c-a70c-f8c7b971e3c4?pwd=ec37c232-0b4b-4a91-af2c-ef680eaa123b
+// Last Updated: Sat May 17 08:11:08 AM CEST 2025
 
 // Package handlers provides HTTP request handlers
 package handlers
@@ -20,7 +20,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"golang.org/x/time/rate"
 
-	"github.com/sebae/ana/internal/ai"
+	"github.com/lyffseba/ana/internal/ai"
 )
 
 // CerebrasAIRequest represents an incoming request to the Cerebras AI assistant

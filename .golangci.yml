@@ -1,0 +1,22 @@
+issues:
+  exclude-rules:
+  - linters:
+    - gosec
+    path: _test\.go
+linters:
+  disable:
+  - lll
+  - gofumpt
+  - gci
+  enable-all: true
+linters-settings:
+  gocyclo:
+    min-complexity: 15
+  gosec:
+    excludes:
+    - G204
+  govet:
+    check-shadowing: true
+run:
+  deadline: 5m
+  tests: true

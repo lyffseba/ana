@@ -1,5 +1,5 @@
-// Reference: https://app.warp.dev/session/b660fd8a-f765-449c-a70c-f8c7b971e3c4?pwd=e9ccd7cb-d8be-494e-a2f2-35469f726896
-// Last Updated: Sat May 17 07:34:44 AM CEST 2025
+// Reference: https://app.warp.dev/session/b660fd8a-f765-449c-a70c-f8c7b971e3c4?pwd=ec37c232-0b4b-4a91-af2c-ef680eaa123b
+// Last Updated: Sat May 17 08:11:08 AM CEST 2025
 
 package handlers
 
@@ -16,7 +16,7 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"github.com/sebae/ana/internal/ai"
+	"github.com/lyffseba/ana/internal/ai"
 )
 
 // MockCerebrasClient is a mock implementation of the Cerebras client for testing

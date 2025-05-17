@@ -190,7 +190,7 @@ Based on our experience, here are solutions to common issues:
 import "github.com/juansgv/ana/internal/ai"
 
 // Use this (matching the go.mod module name)
-import "github.com/sebae/ana/internal/ai"
+import "github.com/lyffseba/ana/internal/ai"
 ```
 
 #### Database Connection Failures
@@ -468,7 +468,7 @@ Basado en nuestra experiencia, aquí hay soluciones a problemas comunes:
 import "github.com/juansgv/ana/internal/ai"
 
 // Usar esto (coincidiendo con el nombre del módulo en go.mod)
-import "github.com/sebae/ana/internal/ai"
+import "github.com/lyffseba/ana/internal/ai"
 ```
 
 #### Fallos de Conexión a Base de Datos
@@ -784,5 +784,5 @@ By following these guidelines, we ensure a consistent, high-quality, and well-do
 
 
 ## Development Session
-Reference: https://app.warp.dev/session/b660fd8a-f765-449c-a70c-f8c7b971e3c4?pwd=e9ccd7cb-d8be-494e-a2f2-35469f726896
-Last Updated: Sat May 17 07:34:44 AM CEST 2025
+Reference: https://app.warp.dev/session/b660fd8a-f765-449c-a70c-f8c7b971e3c4?pwd=ec37c232-0b4b-4a91-af2c-ef680eaa123b
+Last Updated: Sat May 17 08:12:57 AM CEST 2025

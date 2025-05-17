@@ -4,7 +4,7 @@
   publish = "web"
 
 [build.environment]
-  GO_IMPORT_PATH = "github.com/sebae/ana"
+  GO_IMPORT_PATH = "github.com/lyffseba/ana"
   GO111MODULE = "on"
 
 [[redirects]]

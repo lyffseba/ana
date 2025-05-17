@@ -172,13 +172,13 @@ go test ./... -v
 To run tests for a specific package:
 
 ```bash
-go test github.com/sebae/ana/internal/ai -v
+go test github.com/lyffseba/ana/internal/ai -v
 ```
 
 To run a specific test:
 
 ```bash
-go test github.com/sebae/ana/internal/handlers -run TestTextModelRequest -v
+go test github.com/lyffseba/ana/internal/handlers -run TestTextModelRequest -v
 ```
 
 To generate a coverage report:
@@ -451,13 +451,13 @@ go test ./... -v
 Para ejecutar pruebas de un paquete específico:
 
 ```bash
-go test github.com/sebae/ana/internal/ai -v
+go test github.com/lyffseba/ana/internal/ai -v
 ```
 
 Para ejecutar una prueba específica:
 
 ```bash
-go test github.com/sebae/ana/internal/handlers -run TestTextModelRequest -v
+go test github.com/lyffseba/ana/internal/handlers -run TestTextModelRequest -v
 ```
 
 Para generar un informe de cobertura:
@@ -494,5 +494,5 @@ Las pruebas se ejecutan automáticamente como parte de nuestro pipeline CI/CD:
 
 
 ## Development Session
-Reference: https://app.warp.dev/session/b660fd8a-f765-449c-a70c-f8c7b971e3c4?pwd=e9ccd7cb-d8be-494e-a2f2-35469f726896
-Last Updated: Sat May 17 07:34:44 AM CEST 2025
+Reference: https://app.warp.dev/session/b660fd8a-f765-449c-a70c-f8c7b971e3c4?pwd=ec37c232-0b4b-4a91-af2c-ef680eaa123b
+Last Updated: Sat May 17 08:12:57 AM CEST 2025

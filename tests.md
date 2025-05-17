@@ -250,6 +250,71 @@ Los objetos simulados se utilizan ampliamente para aislar componentes para prueb
 - **Mocks de Base de Datos**: Uso de base de datos SQLite en memoria para pruebas de repositorio
 - **Mocks de Servicios**: Implementaciones simuladas de interfaces de servicio para probar manejadores
 
+### Database Testing Strategy
+
+We use SQLite for testing instead of PostgreSQL to ensure:
+- Fast test execution
+- No external dependencies
+- Consistent test environment
+- Easy CI/CD integration
+
+Key components of our database testing approach:
+
+1. **Mock Database Provider**:
+   ```go
+   // Database initialization can be mocked for testing
+   var initializeDB = func() (*gorm.DB, error) {
+       return gorm.Open(postgres.Open(buildDSN()), &gorm.Config{})
+   }
+   ```
+
+2. **Environment Isolation**:
+   - Tests temporarily clear database environment variables
+   - SQLite in-memory database used for all tests
+   - Original environment restored after tests
+
+3. **Test Setup Helper**:
+   ```go
+   func setupTestDB(t *testing.T) {
+       // Save and clear environment variables
+       envVars := []string{"DB_HOST", "DB_USER", "DB_PASSWORD", "DB_NAME", "DB_PORT"}
+       envBackup := make(map[string]string)
+       
+       for _, env := range envVars {
+           envBackup[env] = os.Getenv(env)
+           os.Unsetenv(env)
+       }
+       
+       // Restore environment after test
+       t.Cleanup(func() {
+           for env, value := range envBackup {
+               if value != "" {
+                   os.Setenv(env, value)
+               }
+           }
+       })
+
+       // Use SQLite for testing
+       db, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{})
+       if err != nil {
+           t.Fatalf("Failed to connect to test database: %v", err)
+       }
+
+       // Replace global DB with test DB
+       database.DB = db
+   }
+   ```
+
+4. **Transaction Wrapping**:
+   - Each test runs in a transaction
+   - Transactions are rolled back after each test
+   - Ensures test isolation
+
+5. **Migration Testing**:
+   - Migrations are tested against SQLite
+   - Ensures schema compatibility
+   - Validates migration reversibility
+
 #### Cobertura de Pruebas
 
 La cobertura de pruebas actual se centra en componentes críticos:

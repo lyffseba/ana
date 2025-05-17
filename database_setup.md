@@ -410,3 +410,33 @@ func getEnv(key, defaultValue string) string {
 }
 ```
 
+### 8. Testing Configuration
+
+For testing, we use SQLite instead of PostgreSQL. This ensures:
+- Tests can run without a PostgreSQL installation
+- Fast test execution
+- No test data persistence
+- Reliable CI/CD pipeline
+
+To run tests:
+
+1. No additional setup required - SQLite is used automatically
+2. Tests will create an in-memory database
+3. Each test runs in isolation
+4. Environment variables are automatically managed
+
+Example test run:
+```bash
+# Run all tests
+go test ./... -v
+
+# Run database tests specifically
+go test ./internal/database -v
+```
+
+Note: While we use PostgreSQL in production, SQLite is sufficient for testing most database operations. If you need to test PostgreSQL-specific features, use the `postgres` build tag:
+
+```bash
+go test ./... -tags postgres -v
+```
+

@@ -1,18 +1,37 @@
-documentation:
-  auto_generate: true
-  formats:
-  - html
-  - markdown
-monitoring:
+# ANA Project Configuration
+# Reference: https://app.warp.dev/session/b660fd8a-f765-449c-a70c-f8c7b971e3c4?pwd=e9ccd7cb-d8be-494e-a2f2-35469f726896
+
+server:
+  host: "0.0.0.0"
+  port: 8080
+  read_timeout: 30s
+  write_timeout: 30s
+  idle_timeout: 60s
+
+ai:
+  cerebras:
+    endpoint: ${CEREBRAS_ENDPOINT}
+    api_key: ${CEREBRAS_API_KEY}
+    max_tokens: 1000
+    temperature: 0.7
+  cache:
+    enabled: true
+    duration: 1h
+
+database:
+  host: ${DB_HOST}
+  port: ${DB_PORT}
+  user: ${DB_USER}
+  password: ${DB_PASSWORD}
+  database: ana
+  ssl_mode: disable
+
+logging:
+  level: info
+  format: json
+  output: stdout
+
+metrics:
   enabled: true
-  endpoints:
-  - /health
-  - /metrics
-  interval: 300
-repository: ana
-testing:
-  coverage:
-    minimum: 80
-  framework: pytest
-updated: '2025-05-17T07:45:56.062118'
-warp_session: https://app.warp.dev/session/b660fd8a-f765-449c-a70c-f8c7b971e3c4?pwd=e9ccd7cb-d8be-494e-a2f2-35469f726896
+  port: 9090
+  path: /metrics

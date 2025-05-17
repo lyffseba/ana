@@ -5,7 +5,11 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"sync"
 	"testing"
+	"time"
+
+	"github.com/hashicorp/go-retryablehttp"
 )
 
 // MockRoundTripper is a mock implementation of http.RoundTripper for testing
@@ -66,13 +70,21 @@ func TestGenerateTextResponse(t *testing.T) {
 		},
 	}
 	
-	// Create a client with the mock transport
-	httpClient := &http.Client{Transport: mockTransport}
+	// Create a retryable client with mock transport
+	retryClient := retryablehttp.NewClient()
+	retryClient.HTTPClient = &http.Client{Transport: mockTransport}
+	retryClient.RetryMax = 0 // Disable retries for testing
+	retryClient.Logger = nil // Disable logging for tests
 	
 	client := &CerebrasClient{
-		apiKey:     "test-api-key",
-		apiURL:     "https://test-url.com",
-		httpClient: httpClient,
+		apiKey:            "test-api-key",
+		apiURL:            "https://test-url.com",
+		httpClient:        retryClient,
+		cache:             make(map[string]CachedResponse),
+		cacheTTL:          15 * time.Minute,
+		circuitBreaker:    CircuitBreakerState{mutex: sync.RWMutex{}},
+		concurrencyLimiter: nil, // Not needed for tests
+		metricsEnabled:    false,
 	}
 	
 	// Test with a simple query
@@ -138,13 +150,21 @@ func TestGenerateVisionResponse(t *testing.T) {
 		},
 	}
 	
-	// Create a client with the mock transport
-	httpClient := &http.Client{Transport: mockTransport}
+	// Create a retryable client with mock transport
+	retryClient := retryablehttp.NewClient()
+	retryClient.HTTPClient = &http.Client{Transport: mockTransport}
+	retryClient.RetryMax = 0 // Disable retries for testing
+	retryClient.Logger = nil // Disable logging for tests
 	
 	client := &CerebrasClient{
-		apiKey:     "test-api-key",
-		apiURL:     "https://test-url.com",
-		httpClient: httpClient,
+		apiKey:            "test-api-key",
+		apiURL:            "https://test-url.com",
+		httpClient:        retryClient,
+		cache:             make(map[string]CachedResponse),
+		cacheTTL:          15 * time.Minute,
+		circuitBreaker:    CircuitBreakerState{mutex: sync.RWMutex{}},
+		concurrencyLimiter: nil, // Not needed for tests
+		metricsEnabled:    false,
 	}
 	
 	// Test with a query and image
@@ -179,13 +199,21 @@ func TestErrorHandling(t *testing.T) {
 		},
 	}
 	
-	// Create a client with the mock transport
-	httpClient := &http.Client{Transport: mockTransport}
+	// Create a retryable client with mock transport
+	retryClient := retryablehttp.NewClient()
+	retryClient.HTTPClient = &http.Client{Transport: mockTransport}
+	retryClient.RetryMax = 0 // Disable retries for testing
+	retryClient.Logger = nil // Disable logging for tests
 	
 	client := &CerebrasClient{
-		apiKey:     "test-api-key",
-		apiURL:     "https://test-url.com",
-		httpClient: httpClient,
+		apiKey:            "test-api-key",
+		apiURL:            "https://test-url.com",
+		httpClient:        retryClient,
+		cache:             make(map[string]CachedResponse),
+		cacheTTL:          15 * time.Minute,
+		circuitBreaker:    CircuitBreakerState{mutex: sync.RWMutex{}},
+		concurrencyLimiter: nil, // Not needed for tests
+		metricsEnabled:    false,
 	}
 	
 	// Test with a simple query
@@ -206,10 +234,19 @@ func TestErrorHandling(t *testing.T) {
 // TestNoAPIKey tests the behavior when no API key is provided
 func TestNoAPIKey(t *testing.T) {
 	// Create a client with no API key
+	retryClient := retryablehttp.NewClient()
+	retryClient.RetryMax = 0 // Disable retries for testing
+	retryClient.Logger = nil // Disable logging for tests
+	
 	client := &CerebrasClient{
-		apiKey:     "",
-		apiURL:     "https://test-url.com",
-		httpClient: &http.Client{},
+		apiKey:            "",
+		apiURL:            "https://test-url.com",
+		httpClient:        retryClient,
+		cache:             make(map[string]CachedResponse),
+		cacheTTL:          15 * time.Minute,
+		circuitBreaker:    CircuitBreakerState{mutex: sync.RWMutex{}},
+		concurrencyLimiter: nil, // Not needed for tests
+		metricsEnabled:    false,
 	}
 	
 	// Test text response
@@ -233,9 +270,19 @@ func TestNoAPIKey(t *testing.T) {
 
 // TestVisionNoImage tests the vision model with no image
 func TestVisionNoImage(t *testing.T) {
+	retryClient := retryablehttp.NewClient()
+	retryClient.RetryMax = 0 // Disable retries for testing
+	retryClient.Logger = nil // Disable logging for tests
+	
 	client := &CerebrasClient{
-		apiKey: "test-api-key",
-		apiURL: "https://test-url.com",
+		apiKey:            "test-api-key",
+		apiURL:            "https://test-url.com",
+		httpClient:        retryClient,
+		cache:             make(map[string]CachedResponse),
+		cacheTTL:          15 * time.Minute,
+		circuitBreaker:    CircuitBreakerState{mutex: sync.RWMutex{}},
+		concurrencyLimiter: nil, // Not needed for tests
+		metricsEnabled:    false,
 	}
 	
 	// Test vision response with empty image

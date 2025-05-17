@@ -3,12 +3,12 @@ package handlers
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"mime/multipart"
 	"net/http"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -426,9 +426,15 @@ func GetCerebrasAIAssistance(c *gin.Context) {
 		}
 		response = shortestRelevantLine
 	}
+	// Return the response
+	responseTimeMs = float64(time.Since(startTime).Milliseconds())
+	updateStats(fromCache, responseTimeMs, false)
 
-		Response: response,
-		HasImage: hasImage,
+	c.JSON(http.StatusOK, CerebrasAIResponse{
+		Response:     response,
+		HasImage:     hasImage,
+		FromCache:    fromCache,
+		ResponseTime: responseTimeMs,
 	})
 }
 

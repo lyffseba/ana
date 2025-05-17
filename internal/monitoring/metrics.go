@@ -2,7 +2,6 @@
 package monitoring
 
 import (
-	"encoding/json"
 	"net/http"
 	"os"
 	"sync"

@@ -111,6 +111,50 @@ ana/
 
 5. Accede a la interfaz web en http://localhost:8080
 
+## Environment Variables | Variables de Entorno
+
+### English:
+
+The application uses the following environment variables:
+
+- **Core Application**:
+  - `ANA_ENVIRONMENT`: Deployment environment (`dev`, `test`, or `prod`)
+  - `ANA_VERSION`: Application version
+  - `DATABASE_URL`: PostgreSQL connection string
+
+- **AI Integration**:
+  - `CEREBRAS_API_KEY`: API key for Cerebras AI service
+    - For development: Use a development API key
+    - For testing: Use a test API key with limited quotas
+    - For production: Use a production API key with full access
+  - `CEREBRAS_API_URL`: (Optional) Custom endpoint for Cerebras API
+  - `CEREBRAS_CACHE_TTL`: (Optional) Cache duration for AI responses
+
+- **Google Services**:
+  - `GOOGLE_API_KEY`: API key for Google services
+  - `GOOGLE_OAUTH_CLIENT_ID`: OAuth client ID for Google Calendar integration
+
+### Español:
+
+La aplicación utiliza las siguientes variables de entorno:
+
+- **Aplicación Principal**:
+  - `ANA_ENVIRONMENT`: Entorno de despliegue (`dev`, `test`, o `prod`)
+  - `ANA_VERSION`: Versión de la aplicación
+  - `DATABASE_URL`: Cadena de conexión PostgreSQL
+
+- **Integración de IA**:
+  - `CEREBRAS_API_KEY`: Clave API para el servicio Cerebras AI
+    - Para desarrollo: Usa una clave API de desarrollo
+    - Para pruebas: Usa una clave API de prueba con cuotas limitadas
+    - Para producción: Usa una clave API de producción con acceso completo
+  - `CEREBRAS_API_URL`: (Opcional) Endpoint personalizado para la API de Cerebras
+  - `CEREBRAS_CACHE_TTL`: (Opcional) Duración del caché para respuestas de IA
+
+- **Servicios de Google**:
+  - `GOOGLE_API_KEY`: Clave API para servicios de Google
+  - `GOOGLE_OAUTH_CLIENT_ID`: ID de cliente OAuth para integración con Google Calendar
+
 ## Project Origin | Origen del Proyecto
 
 This project was initially conceived in a Grok.com workspace named "ANA", where the comprehensive plan was developed. It aims to solve the specific challenges faced by architects managing multiple construction projects in Bogota, Colombia.
@@ -122,47 +166,40 @@ El flujo de desarrollo está documentado en [flow.md](flow.md), y el plan detall
 
 ## Current Status | Estado Actual
 
-The project is currently in Phase 1 of development. We have implemented:
+The project has successfully progressed through Phase 1 and is now in Phase 2 of development. We have implemented: | El proyecto ha progresado exitosamente a través de la Fase 1 y está ahora en la Fase 2 de desarrollo. Hemos implementado:
 
-- Basic project structure
-- Initial API endpoints for task management
-- Frontend with HTMX and Tailwind CSS integration
-- Simple routing for API and static files
-- PostgreSQL database integration with GORM ORM
-- Repository pattern for data access layer
-- Environment-based configuration
-- Documentation for database setup
-- **Cerebras AI assistant integration** with dual-model support:
-  - QWen-3B-32B text model for architectural queries
-  - QWen-2.5-Vision model for image analysis and visual assessment
-  - See [ai_integration.md](ai_integration.md) and [cerebras_api.md](cerebras_api.md) for details
-- **Comprehensive test coverage**:
-  - Unit tests for AI client functionality
-  - Handler tests with mock clients
-  - Repository tests with SQLite in-memory database
-  - Integration tests for key components
-  - See [tests.md](tests.md) for testing approach and coverage details
+### Core Infrastructure | Infraestructura Central
+- Complete project structure with Go/Gin backend | Estructura completa del proyecto con backend Go/Gin
+- HTMX and Tailwind CSS frontend integration | Integración frontend con HTMX y Tailwind CSS
+- PostgreSQL database with GORM ORM | Base de datos PostgreSQL con GORM ORM
+- Repository pattern for data access | Patrón repositorio para acceso a datos
+- Environment-based configuration | Configuración basada en variables de entorno
 
-El proyecto se encuentra actualmente en la Fase 1 de desarrollo. Hemos implementado:
+### AI Integration | Integración de IA
+- **Cerebras AI assistant** with dual-model support: | **Asistente de IA Cerebras** con soporte de modelos duales:
+  - QWen-3B-32B for architectural expertise | QWen-3B-32B para experiencia arquitectónica
+  - QWen-2.5-Vision for image analysis | QWen-2.5-Vision para análisis de imágenes
+  - Context-aware responses in Spanish/English | Respuestas contextuales en Español/Inglés
+  - Optimized caching and error handling | Caché optimizado y manejo de errores
+  - See [ai_integration.md](ai_integration.md) and [cerebras_api.md](cerebras_api.md) for details | Ver [ai_integration.md](ai_integration.md) y [cerebras_api.md](cerebras_api.md) para detalles
 
-- Estructura básica del proyecto
-- Puntos finales iniciales de API para gestión de tareas
-- Frontend con integración de HTMX y Tailwind CSS
-- Enrutamiento simple para API y archivos estáticos
-- Integración de base de datos PostgreSQL con GORM ORM
-- Patrón de repositorio para capa de acceso a datos
-- Configuración basada en variables de entorno
-- Documentación para la configuración de la base de datos
-- **Integración del asistente de IA Cerebras** con soporte de modelos duales:
-  - Modelo de texto QWen-3B-32B para consultas arquitectónicas
-  - Modelo QWen-2.5-Vision para análisis de imágenes y evaluación visual
-  - Ver [ai_integration.md](ai_integration.md) y [cerebras_api.md](cerebras_api.md) para detalles
-- **Cobertura completa de pruebas**:
-  - Pruebas unitarias para la funcionalidad del cliente AI
-  - Pruebas de manejadores con clientes simulados
-  - Pruebas de repositorio con base de datos SQLite en memoria
-  - Pruebas de integración para componentes clave
-  - Ver [tests.md](tests.md) para el enfoque de pruebas y detalles de cobertura
+### Testing Infrastructure | Infraestructura de Pruebas
+- **Comprehensive test coverage**: | **Cobertura completa de pruebas**:
+  - Unit tests for core functionality | Pruebas unitarias para funcionalidad central
+  - Handler tests with mock implementations | Pruebas de manejadores con implementaciones simuladas
+  - Repository tests with SQLite in-memory database | Pruebas de repositorio con base de datos SQLite en memoria
+  - Integration tests for API endpoints | Pruebas de integración para endpoints API
+  - See [tests.md](tests.md) for details | Ver [tests.md](tests.md) para detalles
+
+### Monitoring & Operations | Monitoreo y Operaciones
+- Prometheus metrics collection | Recolección de métricas con Prometheus
+- Health check endpoints | Endpoints de verificación de salud
+- Error tracking and logging | Seguimiento y registro de errores
+
+### In Progress | En Progreso
+- Google Calendar/Gmail integration | Integración con Google Calendar/Gmail
+- Enhanced project management features | Características mejoradas de gestión de proyectos
+- Location-based supplier search | Búsqueda de proveedores basada en ubicación
 
 ## Contact | Contacto
 

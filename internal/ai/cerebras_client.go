@@ -3,15 +3,16 @@ package ai
 
 import (
 	"bytes"
-	"context"
 	"crypto/md5"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
+	"math/rand"
 	"net/http"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -212,8 +213,8 @@ func computeCacheKey(model string, messages []Message) string {
 	return hex.EncodeToString(hash[:])
 }
 
-// getCachedResponse retrieves a response from cache if available
-func (c *CerebrasClient) getCachedResponse(model string, messages []Message) (string, bool) {
+// GetCachedResponse retrieves a response from cache if available
+func (c *CerebrasClient) GetCachedResponse(model string, messages []Message) (string, bool) {
 	if !isCacheable(messages) {
 		return "", false
 	}
@@ -238,8 +239,8 @@ func (c *CerebrasClient) getCachedResponse(model string, messages []Message) (st
 	return "", false
 }
 
-// setCachedResponse stores a response in the cache
-func (c *CerebrasClient) setCachedResponse(model string, messages []Message, response string) {
+// SetCachedResponse stores a response in the cache
+func (c *CerebrasClient) SetCachedResponse(model string, messages []Message, response string) {
 	if !isCacheable(messages) {
 		return
 	}
@@ -311,8 +312,8 @@ func isCacheable(messages []Message) bool {
 	return true
 }
 
-// checkCircuitBreaker determines if requests should be allowed based on failure history
-func (c *CerebrasClient) checkCircuitBreaker() error {
+// CheckCircuitBreaker determines if requests should be allowed based on failure history
+func (c *CerebrasClient) CheckCircuitBreaker() error {
 	c.circuitBreaker.mutex.RLock()
 	defer c.circuitBreaker.mutex.RUnlock()
 	
@@ -325,8 +326,8 @@ func (c *CerebrasClient) checkCircuitBreaker() error {
 	return nil
 }
 
-// recordSuccess resets the failure counter on successful API calls
-func (c *CerebrasClient) recordSuccess() {
+// RecordSuccess resets the failure counter on successful API calls
+func (c *CerebrasClient) RecordSuccess() {
 	c.circuitBreaker.mutex.Lock()
 	defer c.circuitBreaker.mutex.Unlock()
 	
@@ -334,8 +335,8 @@ func (c *CerebrasClient) recordSuccess() {
 	c.circuitBreaker.Open = false
 }
 
-// recordFailure tracks API failures and opens circuit breaker if threshold is exceeded
-func (c *CerebrasClient) recordFailure() {
+// RecordFailure tracks API failures and opens circuit breaker if threshold is exceeded
+func (c *CerebrasClient) RecordFailure() {
 	c.circuitBreaker.mutex.Lock()
 	defer c.circuitBreaker.mutex.Unlock()
 	
@@ -350,13 +351,50 @@ func (c *CerebrasClient) recordFailure() {
 	}
 }
 
+// GenerateTextResponse generates a response to a text-only query
+func (c *CerebrasClient) GenerateTextResponse(userQuery string, model string, conversationContext []Message) (string, error) {
+	if c.apiKey == "" {
+		return "Lo sentimos, el asistente de arquitectura no está disponible en este momento. Por favor contacta al administrador para activar esta funcionalidad.", nil
+	}
+
+	// Create a context with user's query
+	messages := append(conversationContext, Message{
+		Role:    "user",
+		Content: userQuery,
+	})
+
+	// Create the request body
+	requestBody := ChatCompletionRequest{
+		Model:       model,
+		Messages:    messages,
+		Temperature: 0.7,
+		MaxTokens:   500,
+	}
+
+	// Convert to JSON
+	requestBytes, err := json.Marshal(requestBody)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	// Create the HTTP request
+	req, err := http.NewRequest("POST", c.apiURL, bytes.NewBuffer(requestBytes))
+	if err != nil {
+		return "", fmt.Errorf("failed to create request: %w", err)
+	}
 
 	// Set headers
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+c.apiKey)
 
+	// Convert standard request to retryable request
+	retryReq, err := retryablehttp.FromRequest(req)
+	if err != nil {
+		return "", fmt.Errorf("failed to create retry request: %w", err)
+	}
+	
 	// Make the request
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.httpClient.Do(retryReq)
 	if err != nil {
 		return "", fmt.Errorf("failed to send request: %w", err)
 	}
@@ -452,8 +490,14 @@ func (c *CerebrasClient) GenerateVisionResponse(userQuery string, imageBase64 st
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+c.apiKey)
 
+	// Convert standard request to retryable request
+	retryReq, err := retryablehttp.FromRequest(req)
+	if err != nil {
+		return "", fmt.Errorf("failed to create retry request for vision: %w", err)
+	}
+	
 	// Make the request
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.httpClient.Do(retryReq)
 	if err != nil {
 		return "", fmt.Errorf("failed to send vision request: %w", err)
 	}
@@ -511,3 +555,28 @@ func getEnv(key, defaultValue string) string {
 	return defaultValue
 }
 
+// GetAPIStatus returns the status of the API authentication
+func (c *CerebrasClient) GetAPIStatus() string {
+	if c.apiKey == "" {
+		return "missing_key"
+	}
+	return "ok"
+}
+
+// GetCacheSize returns the current number of items in the cache
+func (c *CerebrasClient) GetCacheSize() int {
+	c.cacheMutex.RLock()
+	defer c.cacheMutex.RUnlock()
+	return len(c.cache)
+}
+
+// GetCircuitState returns the current state of the circuit breaker
+func (c *CerebrasClient) GetCircuitState() string {
+	c.circuitBreaker.mutex.RLock()
+	defer c.circuitBreaker.mutex.RUnlock()
+	
+	if c.circuitBreaker.Open {
+		return "open"
+	}
+	return "closed"
+}

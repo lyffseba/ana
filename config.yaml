@@ -1,0 +1,18 @@
+documentation:
+  auto_generate: true
+  formats:
+  - html
+  - markdown
+monitoring:
+  enabled: true
+  endpoints:
+  - /health
+  - /metrics
+  interval: 300
+repository: ana
+testing:
+  coverage:
+    minimum: 80
+  framework: pytest
+updated: '2025-05-17T07:45:56.062118'
+warp_session: https://app.warp.dev/session/b660fd8a-f765-449c-a70c-f8c7b971e3c4?pwd=e9ccd7cb-d8be-494e-a2f2-35469f726896

@@ -1,0 +1,20 @@
+alerts:
+  channels:
+  - discord
+  - email
+  thresholds:
+    error_rate: 0.01
+    latency: 200ms
+health_checks:
+  endpoints:
+  - interval: 30s
+    url: /health
+  - interval: 60s
+    url: /metrics
+metrics:
+  collect:
+  - cpu
+  - memory
+  - requests
+  export:
+  - prometheus

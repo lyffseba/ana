@@ -1,0 +1,116 @@
+# Standardized Health Check Configuration
+# For multi-language repository monitoring
+
+# Common API endpoints to check
+endpoints:
+  api:
+    - name: "API Health"
+      url: "http://localhost:5000/health"
+      description: "Main API health endpoint"
+      expected_status: 200
+    - name: "GitHub API"
+      url: "https://api.github.com/user"
+      headers:
+        Authorization: "token ${GITHUB_TOKEN}"
+      description: "GitHub API connection check"
+      expected_status: 200
+
+# Repository-specific checks
+repositories:
+  # Configure additional checks for specific repositories
+  # Format:
+  # repo_name:
+  #   language: python|go|node|other
+  #   endpoints:
+  #     - name: "Service Name"
+  #       url: "http://localhost:PORT/path"
+  #       method: "GET"
+  #       headers: {}
+  #       expected_status: 200
+
+  # Python project example
+  python_repo:
+    language: python
+    endpoints:
+      - name: "Web Service"
+        url: "http://localhost:8000/health"
+        expected_status: 200
+      - name: "Database"
+        url: "http://localhost:5432/"
+        expected_status: 200
+
+  # Go project example  
+  go_repo:
+    language: go
+    endpoints:
+      - name: "API Service"
+        url: "http://localhost:8080/health"
+        expected_status: 200
+      - name: "Metrics"
+        url: "http://localhost:8080/metrics"
+        expected_status: 200
+
+  # Node.js project example
+  node_repo:
+    language: node
+    endpoints:
+      - name: "Web App"
+        url: "http://localhost:3000/"
+        expected_status: 200
+      - name: "API"
+        url: "http://localhost:3001/api/health"
+        expected_status: 200
+
+# Default checks for all repositories
+default_checks:
+  - type: "git"
+    check: "status"
+    description: "Check if the git repository has uncommitted changes"
+  - type: "docker"
+    check: "container_status"
+    description: "Check if required Docker containers are running"
+  - type: "dependencies"
+    check: "package_updates"
+    description: "Check for outdated dependencies"
+
+# Language-specific checks
+language_checks:
+  python:
+    - type: "virtual_env"
+      check: "activated"
+      description: "Check if virtual environment is active"
+    - type: "pytest"
+      check: "run_basic"
+      description: "Run basic tests to verify functionality"
+  
+  go:
+    - type: "go_modules"
+      check: "tidy"
+      description: "Check if go.mod and go.sum are in sync"
+    - type: "go_test"
+      check: "run_basic"
+      description: "Run basic tests to verify functionality"
+  
+  node:
+    - type: "npm"
+      check: "audit"
+      description: "Run npm audit to check for vulnerabilities"
+    - type: "npm"
+      check: "test"
+      description: "Run tests defined in package.json"
+
+# Notification settings
+notifications:
+  slack:
+    enabled: false
+    webhook_url: "${SLACK_WEBHOOK_URL}"
+  
+  discord:
+    enabled: true
+    webhook_url: "${DISCORD_WEBHOOK_URL}"
+  
+  email:
+    enabled: false
+    recipients:
+      - "admin@example.com"
+

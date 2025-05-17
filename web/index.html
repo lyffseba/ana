@@ -190,29 +190,143 @@
                 <!-- AI Assistant -->
                 <div class="bg-white rounded-lg shadow-md p-4 mt-6">
                     <h2 class="text-xl font-bold mb-4 text-terra-800 border-b border-terra-200 pb-2">
-                        Asistente IA
+                        Asistente IA <span id="model-display" class="text-sm font-normal text-gray-500">(QWen-3B-32B)</span>
                     </h2>
+                    
+                    <!-- Model Selector -->
+                    <div class="mb-4">
+                        <label for="ai-model-selector" class="block text-sm font-medium text-gray-700 mb-1">Modelo de IA:</label>
+                        <select 
+                            id="ai-model-selector" 
+                            name="model" 
+                            class="w-full md:w-auto px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-terra-500 focus:border-transparent"
+                            onchange="toggleModelFeatures()"
+                        >
+                            <option value="qwen-text" selected>QWen-3B-32B (Texto)</option>
+                            <option value="qwen-vision">QWen-2.5-Vision (Texto + Imágenes)</option>
+                        </select>
+                    </div>
+                    
                     <div class="space-y-4">
-                        <div id="ai-chat-container" class="border border-gray-200 rounded-lg p-4 max-h-60 overflow-y-auto">
-                            <div id="ai-chat-messages" class="space-y-3">
-                                <div class="bg-terra-50 p-3 rounded-lg inline-block">
-                                    <p class="text-sm">¡Hola! Soy tu asistente virtual de ana.world. ¿Cómo puedo ayudarte con tus proyectos arquitectónicos hoy?</p>
+                        <div class="bg-olive-50 rounded-lg p-2 mb-2 text-xs text-olive-800">
+                            <p id="model-capabilities"><strong>Especialización:</strong> Arquitectura, diseño, gestión de proyectos de construcción, normativas colombianas</p>
+                        </div>
+                        
+                        <!-- Image upload section (hidden by default) -->
+                        <div id="image-upload-section" class="hidden">
+                            <label for="image-upload" class="block text-sm font-medium text-gray-700 mb-1">Subir imagen de arquitectura:</label>
+                            <div class="flex items-center space-x-2">
+                                <label class="flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg cursor-pointer hover:bg-gray-200">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                    <span>Seleccionar Imagen</span>
+                                    <input type="file" id="image-upload" name="image" accept="image/*" class="hidden" onchange="previewImage(this)"/>
+                                </label>
+                                <button type="button" id="clear-image" class="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hidden hover:bg-gray-300" onclick="clearImage()">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                            
+                            <!-- Image preview -->
+                            <div id="image-preview-container" class="mt-2 hidden">
+                                <div class="relative">
+                                    <img id="image-preview" class="max-h-60 rounded-lg border border-gray-200" src="" alt="Preview" />
                                 </div>
                             </div>
                         </div>
                         
-                        <form id="ai-form" class="flex gap-2" hx-post="/api/ai/assistant" hx-target="#ai-response-container" hx-swap="beforeend" hx-indicator="#ai-loading">
-                            <input 
-                                type="text" 
-                                name="query" 
-                                id="ai-query" 
-                                class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-terra-500 focus:border-transparent"
-                                placeholder="Pregunta al asistente..."
-                                required
-                            >
-                            <button 
-                                type="submit"
-                                class="px-4 py-2 bg-olive-700 hover:bg-olive-800 text-white font-medium rounde
+                        <div id="ai-chat-container" class="border border-gray-200 rounded-lg p-4 max-h-60 overflow-y-auto">
+                            <div id="ai-chat-messages" class="space-y-3">
+                                <div class="bg-terra-50 p-3 rounded-lg inline-block">
+                                    <p class="text-sm">¡Hola! Soy tu asistente especializado en arquitectura de ana.world. Puedo ayudarte con diseño arquitectónico, normativas de construcción en Colombia, gestión de proyectos, y más. ¿En qué puedo asistirte hoy?</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <form id="ai-form" class="flex flex-col gap-2" hx-post="/api/ai/cerebras" hx-target="#ai-chat-messages" hx-swap="beforeend" hx-indicator="#ai-loading" hx-encoding="multipart/form-data">
+                            <input type="hidden" name="model_type" id="model-type-input" value="qwen-text">
+                            
+                            <div class="flex gap-2">
+                                <input 
+                                    type="text" 
+                                    name="query" 
+                                    id="ai-query" 
+                                    class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-terra-500 focus:border-transparent"
+                                    placeholder="Consulta temas de arquitectura, diseño o gestión de proyectos..."
+                                    required
+                                >
+                                <button 
+                                    type="submit"
+                                    class="px-4 py-2 bg-olive-700 hover:bg-olive-800 text-white font-medium rounded-md flex items-center"
+                                >
+                                    <span>Consultar</span>
+                                </button>
+                                <div id="ai-loading" class="htmx-indicator">
+                                    <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-terra-700"></div>
+                                </div>
+                            </div>
+                        </form>
+                        
+                        <!-- JavaScript for model selection and image handling -->
+                        <script>
+                            function toggleModelFeatures() {
+                                const modelSelector = document.getElementById('ai-model-selector');
+                                const modelType = modelSelector.value;
+                                const imageUploadSection = document.getElementById('image-upload-section');
+                                const modelDisplay = document.getElementById('model-display');
+                                const modelCapabilities = document.getElementById('model-capabilities');
+                                const modelTypeInput = document.getElementById('model-type-input');
+                                
+                                // Update hidden input value
+                                modelTypeInput.value = modelType;
+                                
+                                if (modelType === 'qwen-vision') {
+                                    // Show image upload for vision model
+                                    imageUploadSection.classList.remove('hidden');
+                                    modelDisplay.textContent = '(QWen-2.5-Vision)';
+                                    modelCapabilities.innerHTML = '<strong>Especialización:</strong> Análisis visual de arquitectura, identificación de estilos, detección de problemas estructurales, interpretación de planos y diseños';
+                                } else {
+                                    // Hide image upload for text model
+                                    imageUploadSection.classList.add('hidden');
+                                    modelDisplay.textContent = '(QWen-3B-32B)';
+                                    modelCapabilities.innerHTML = '<strong>Especialización:</strong> Arquitectura, diseño, gestión de proyectos de construcción, normativas colombianas';
+                                    
+                                    // Clear any uploaded image
+                                    clearImage();
+                                }
+                            }
+                            
+                            function previewImage(input) {
+                                const previewContainer = document.getElementById('image-preview-container');
+                                const previewImg = document.getElementById('image-preview');
+                                const clearButton = document.getElementById('clear-image');
+                                
+                                if (input.files && input.files[0]) {
+                                    const reader = new FileReader();
+                                    
+                                    reader.onload = function(e) {
+                                        previewImg.src = e.target.result;
+                                        previewContainer.classList.remove('hidden');
+                                        clearButton.classList.remove('hidden');
+                                    }
+                                    
+                                    reader.readAsDataURL(input.files[0]);
+                                }
+                            }
+                            
+                            function clearImage() {
+                                const imageUpload = document.getElementById('image-upload');
+                                const previewContainer = document.getElementById('image-preview-container');
+                                const clearButton = document.getElementById('clear-image');
+                                
+                                imageUpload.value = '';
+                                previewContainer.classList.add('hidden');
+                                clearButton.classList.add('hidden');
+                            }
+                        </script>
 
     <footer class="bg-terra-800 text-white p-4 mt-8">
         <div class="container mx-auto text-center text-sm">
@@ -326,5 +440,121 @@
             // Process today's tasks
             if (event.detail.target.id === 'daily-agenda') {
                 const tasks = JSON.parse(event.detail.xhr.responseText);
-                const agen
-
+                const agenda = document.getElementById('daily-agenda');
+                
+                // Clear existing content
+                agenda.innerHTML = '';
+                
+                if (tasks.length === 0) {
+                    // No tasks today
+                    const emptyMessage = document.createElement('div');
+                    emptyMessage.className = 'text-center py-4 text-gray-500';
+                    emptyMessage.textContent = 'No hay tareas programadas para hoy';
+                    agenda.appendChild(emptyMessage);
+                } else {
+                    // Create task elements for today's agenda
+                    tasks.forEach(task => {
+                        const taskItem = document.createElement('div');
+                        taskItem.className = 'border-l-4 border-terra-500 bg-terra-50 p-3 mb-2';
+                        
+                        const taskTitle = document.createElement('h3');
+                        taskTitle.className = 'font-medium text-terra-800';
+                        taskTitle.textContent = task.title;
+                        
+                        const taskDetails = document.createElement('div');
+                        taskDetails.className = 'flex justify-between text-xs text-gray-500 mt-1';
+                        
+                        const prioritySpan = document.createElement('span');
+                        prioritySpan.className = {
+                            'Low': 'text-blue-600',
+                            'Medium': 'text-yellow-600',
+                            'High': 'text-red-600'
+                        }[task.priority] || 'text-gray-600';
+                        prioritySpan.textContent = {
+                            'Low': 'Prioridad: Baja',
+                            'Medium': 'Prioridad: Media',
+                            'High': 'Prioridad: Alta'
+                        }[task.priority] || `Prioridad: ${task.priority}`;
+                        
+                        const statusSpan = document.createElement('span');
+                        statusSpan.textContent = {
+                            'To-Do': 'Por hacer',
+                            'In-Progress': 'En progreso',
+                            'Done': 'Completada'
+                        }[task.status] || task.status;
+                        
+                        taskDetails.appendChild(prioritySpan);
+                        taskDetails.appendChild(statusSpan);
+                        
+                        taskItem.appendChild(taskTitle);
+                        taskItem.appendChild(taskDetails);
+                        agenda.appendChild(taskItem);
+                    });
+                }
+            }
+            
+            // Handle AI chat responses
+            if (event.detail.target.id === 'ai-chat-messages') {
+                // After AI response is added, clear the input field
+                document.getElementById('ai-query').value = '';
+                
+                // Scroll chat container to bottom
+                const chatContainer = document.getElementById('ai-chat-container');
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+                
+                // Format the user query and AI response for display
+                try {
+                    const response = JSON.parse(event.detail.xhr.responseText);
+                    
+                    // Create user query bubble
+                    const userQuery = document.createElement('div');
+                    userQuery.className = 'bg-olive-100 p-3 rounded-lg inline-block ml-auto';
+                    userQuery.style.float = 'right';
+                    userQuery.style.clear = 'both';
+                    userQuery.style.marginBottom = '8px';
+                    
+                    const userText = document.createElement('p');
+                    userText.className = 'text-sm';
+                    userText.textContent = document.getElementById('ai-query').dataset.lastQuery;
+                    userQuery.appendChild(userText);
+                    
+                    // Create AI response bubble
+                    const aiResponse = document.createElement('div');
+                    aiResponse.className = 'bg-terra-50 p-3 rounded-lg inline-block';
+                    aiResponse.style.clear = 'both';
+                    
+                    const aiText = document.createElement('p');
+                    aiText.className = 'text-sm';
+                    aiText.textContent = response.response;
+                    aiResponse.appendChild(aiText);
+                    
+                    // Add to chat container
+                    document.getElementById('ai-chat-messages').appendChild(aiResponse);
+                } catch (error) {
+                    console.error('Error processing AI response:', error);
+                }
+            }
+        });
+        
+        // Store query text before submission
+        document.getElementById('ai-form').addEventListener('submit', function() {
+            const queryInput = document.getElementById('ai-query');
+            queryInput.dataset.lastQuery = queryInput.value;
+            
+            // Add user query to chat
+            const userQuery = document.createElement('div');
+            userQuery.className = 'bg-olive-100 p-3 rounded-lg inline-block ml-auto';
+            userQuery.style.float = 'right';
+            userQuery.style.clear = 'both';
+            userQuery.style.marginBottom = '8px';
+            
+            const userText = document.createElement('p');
+            userText.className = 'text-sm';
+            userText.textContent = queryInput.value;
+            userQuery.appendChild(userText);
+            
+            document.getElementById('ai-chat-messages').appendChild(userQuery);
+        });
+    </script>
+</body>
+</html>

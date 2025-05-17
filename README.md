@@ -132,8 +132,16 @@ The project is currently in Phase 1 of development. We have implemented:
 - Repository pattern for data access layer
 - Environment-based configuration
 - Documentation for database setup
-- **Cerebras AI assistant integration** (see [ai_integration.md](ai_integration.md))
-- Testing scripts for database and AI verification
+- **Cerebras AI assistant integration** with dual-model support:
+  - QWen-3B-32B text model for architectural queries
+  - QWen-2.5-Vision model for image analysis and visual assessment
+  - See [ai_integration.md](ai_integration.md) and [cerebras_api.md](cerebras_api.md) for details
+- **Comprehensive test coverage**:
+  - Unit tests for AI client functionality
+  - Handler tests with mock clients
+  - Repository tests with SQLite in-memory database
+  - Integration tests for key components
+  - See [tests.md](tests.md) for testing approach and coverage details
 
 El proyecto se encuentra actualmente en la Fase 1 de desarrollo. Hemos implementado:
 
@@ -145,8 +153,16 @@ El proyecto se encuentra actualmente en la Fase 1 de desarrollo. Hemos implement
 - Patrón de repositorio para capa de acceso a datos
 - Configuración basada en variables de entorno
 - Documentación para la configuración de la base de datos
-- **Integración del asistente de IA Cerebras** (ver [ai_integration.md](ai_integration.md))
-- Scripts de prueba para verificación de base de datos e IA
+- **Integración del asistente de IA Cerebras** con soporte de modelos duales:
+  - Modelo de texto QWen-3B-32B para consultas arquitectónicas
+  - Modelo QWen-2.5-Vision para análisis de imágenes y evaluación visual
+  - Ver [ai_integration.md](ai_integration.md) y [cerebras_api.md](cerebras_api.md) para detalles
+- **Cobertura completa de pruebas**:
+  - Pruebas unitarias para la funcionalidad del cliente AI
+  - Pruebas de manejadores con clientes simulados
+  - Pruebas de repositorio con base de datos SQLite en memoria
+  - Pruebas de integración para componentes clave
+  - Ver [tests.md](tests.md) para el enfoque de pruebas y detalles de cobertura
 
 ## Contact | Contacto
 

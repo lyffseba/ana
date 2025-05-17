@@ -71,13 +71,13 @@ func NewCerebrasClient() *CerebrasClient {
 	}
 }
 
-// GenerateAssistantResponse generates a response to a user query
-func (c *CerebrasClient) GenerateAssistantResponse(userQuery string, conversationContext []Message) (string, error) {
+// GenerateTextResponse generates a response to a text-only query
+func (c *CerebrasClient) GenerateTextResponse(userQuery string, model string, conversationContext []Message) (string, error) {
 	if c.apiKey == "" {
-		return "AI assistance is not available. Please contact the administrator.", nil
+		return "Lo sentimos, el asistente de arquitectura no está disponible en este momento. Por favor contacta al administrador para activar esta funcionalidad.", nil
 	}
 
-	// Prepare the messages
+	// Create a context with user's query
 	messages := append(conversationContext, Message{
 		Role:    "user",
 		Content: userQuery,
@@ -85,24 +85,25 @@ func (c *CerebrasClient) GenerateAssistantResponse(userQuery string, conversatio
 
 	// Create the request body
 	requestBody := ChatCompletionRequest{
-		Model:       "cerebras/Cerebras-GPT-4o",
+		Model:       model,
 		Messages:    messages,
 		Temperature: 0.7,
 		MaxTokens:   500,
 	}
 
-	jsonBody, err := json.Marshal(requestBody)
+	// Convert to JSON
+	requestBytes, err := json.Marshal(requestBody)
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal request: %w", err)
 	}
 
 	// Create the HTTP request
-	req, err := http.NewRequest("POST", c.apiURL, bytes.NewBuffer(jsonBody))
+	req, err := http.NewRequest("POST", c.apiURL, bytes.NewBuffer(requestBytes))
 	if err != nil {
 		return "", fmt.Errorf("failed to create request: %w", err)
 	}
 
-	// Add headers
+	// Set headers
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+c.apiKey)
 
@@ -113,14 +114,28 @@ func (c *CerebrasClient) GenerateAssistantResponse(userQuery string, conversatio
 	}
 	defer resp.Body.Close()
 
-	// Read and parse the response
+	// Read the response
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return "", fmt.Errorf("failed to read response: %w", err)
+		return "", fmt.Errorf("failed to read response body: %w", err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("API error: status code %d, body: %s", resp.StatusCode, string(body))
+		log.Printf("API error: status code %d, body: %s", resp.StatusCode, string(body))
+		
+		// Return user-friendly error messages based on status code
+		switch resp.StatusCode {
+		case http.StatusUnauthorized:
+			return "No se pudo autenticar con el servicio de IA. Por favor verifica la configuración del asistente arquitectónico.", nil
+		case http.StatusForbidden:
+			return "No tienes permisos para utilizar el asistente arquitectónico. Por favor contacta al administrador.", nil
+		case http.StatusTooManyRequests:
+			return "El asistente arquitectónico está experimentando mucho tráfico. Por favor intenta de nuevo en unos momentos.", nil
+		case http.StatusServiceUnavailable:
+			return "El servicio de asistencia arquitectónica no está disponible temporalmente. Por favor intenta más tarde.", nil
+		default:
+			return "Hubo un problema al procesar tu consulta arquitectónica. Por favor intenta reformularla o contacta soporte técnico.", nil
+		}
 	}
 
 	var completionResponse ChatCompletionResponse
@@ -133,6 +148,111 @@ func (c *CerebrasClient) GenerateAssistantResponse(userQuery string, conversatio
 	}
 
 	return completionResponse.Choices[0].Message.Content, nil
+}
+
+// GenerateVisionResponse generates a response to a query with an image
+func (c *CerebrasClient) GenerateVisionResponse(userQuery string, imageBase64 string, conversationContext []Message) (string, error) {
+	if c.apiKey == "" {
+		return "Lo sentimos, el asistente de visión arquitectónica no está disponible en este momento. Por favor contacta al administrador para activar esta funcionalidad.", nil
+	}
+
+	if imageBase64 == "" {
+		return "", fmt.Errorf("image data is required for vision model")
+	}
+
+	// Determine image format (simple heuristic)
+	var imageFormat string
+	if len(imageBase64) > 0 {
+		imageFormat = "jpeg" // default assumption
+	}
+
+	// Create content with image
+	imageContent := fmt.Sprintf(
+		`%s\n\n![Imagen arquitectónica](data:image/%s;base64,%s)`,
+		userQuery,
+		imageFormat,
+		imageBase64,
+	)
+
+	// Create a context with user's query and image
+	messages := append(conversationContext, Message{
+		Role:    "user",
+		Content: imageContent,
+	})
+
+	// Create the request body - specifically use vision model
+	requestBody := ChatCompletionRequest{
+		Model:       "cerebras/QWen-2.5-Vision",
+		Messages:    messages,
+		Temperature: 0.7,
+		MaxTokens:   800, // Higher for vision descriptions
+	}
+
+	// Convert to JSON
+	requestBytes, err := json.Marshal(requestBody)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal vision request: %w", err)
+	}
+
+	// Create the HTTP request
+	req, err := http.NewRequest("POST", c.apiURL, bytes.NewBuffer(requestBytes))
+	if err != nil {
+		return "", fmt.Errorf("failed to create vision request: %w", err)
+	}
+
+	// Set headers
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+c.apiKey)
+
+	// Make the request
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("failed to send vision request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// Read the response
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("failed to read vision response body: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		log.Printf("Vision API error: status code %d, body: %s", resp.StatusCode, string(body))
+		
+		// Return user-friendly error messages based on status code
+		switch resp.StatusCode {
+		case http.StatusUnauthorized:
+			return "No se pudo autenticar con el servicio de visión AI. Por favor verifica la configuración del asistente.", nil
+		case http.StatusForbidden:
+			return "No tienes permisos para utilizar el análisis de imágenes. Por favor contacta al administrador.", nil
+		case http.StatusTooManyRequests:
+			return "El servicio de análisis de imágenes está experimentando mucho tráfico. Por favor intenta de nuevo en unos momentos.", nil
+		case http.StatusServiceUnavailable:
+			return "El servicio de análisis de imágenes no está disponible temporalmente. Por favor intenta más tarde.", nil
+		case http.StatusRequestEntityTooLarge:
+			return "La imagen es demasiado grande. Por favor utiliza una imagen más pequeña (máximo 5MB).", nil
+		default:
+			return "Hubo un problema al procesar tu imagen arquitectónica. Por favor intenta con otra imagen o contacta soporte técnico.", nil
+		}
+	}
+
+	var completionResponse ChatCompletionResponse
+	if err := json.Unmarshal(body, &completionResponse); err != nil {
+		return "", fmt.Errorf("failed to unmarshal vision response: %w", err)
+	}
+
+	if len(completionResponse.Choices) == 0 {
+		return "No se pudo generar un análisis de la imagen. Por favor intenta con otra imagen más clara o con mejor iluminación.", nil
+	}
+
+	return completionResponse.Choices[0].Message.Content, nil
+}
+
+// GenerateAssistantResponse is a legacy function that calls GenerateTextResponse with default model
+// Kept for backward compatibility
+func (c *CerebrasClient) GenerateAssistantResponse(userQuery string, conversationContext []Message) (string, error) {
+	return c.GenerateTextResponse(userQuery, "cerebras/QWen-3B-32B", conversationContext)
 }
 
 // getEnv gets an environment variable or returns a default value

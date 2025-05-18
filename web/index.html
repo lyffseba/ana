@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ana.world - Gestión de Proyectos</title>
+    <!-- HTMX for dynamic updates -->
+    <script src="https://unpkg.com/htmx.org@1.9.6"></script>
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Configure Tailwind with terra colors
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        terra: {
+                            50: '#f9f5f0',
+                            100: '#f1e6d8',
+                            200: '#e2ccb0',
+                            300: '#d4b186',
+                            400: '#c69665',
+                            500: '#b77b46',
+                            600: '#a56539',
+                            700: '#854f2f',
+                            800: '#6b4127',
+                            900: '#563423',
+                        },
+                        olive: {
+                            50: '#f5f7ed',
+                            100: '#e6ebcf',
+                            200: '#d3dba3',
+                            300: '#bbc773',
+                            400: '#a4b447',
+                            500: '#879628',
+                            600: '#6e7921',
+                            700: '#575f1c',
+                            800: '#464c19',
+                            900: '#3b4018',
+                        },
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-terra-50 text-gray-800 min-h-screen">
+    <header class="bg-terra-700 text-white p-4 shadow-md">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold">ana.world</h1>
+            <div class="text-sm">
+                <span class="font-medium">Arquitectura y Proyectos</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-4 md:p-6 lg:p-8">
+        <div class="flex flex-col lg:flex-row gap-8">
+            <!-- Left Column: Daily Agenda -->
+            <section class="w-full lg:w-1/3">
+                <div class="bg-white rounded-lg shadow-md p-4 mb-6">
+                    <h2 class="text-xl font-bold mb-4 text-terra-800 border-b border-terra-200 pb-2">
+                        Agenda Diaria
+                    </h2>
+                    <div 
+                        id="daily-agenda" 
+                        hx-get="/api/agenda/today" 
+                        hx-trigger="load, taskChanged from:body"
+                        hx-indicator=".agenda-loader"
+                        class="space-y-2"
+                    >
+                        <div class="agenda-loader flex justify-center p-4">
+                            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-terra-700"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Column: Task Management -->
+            <section class="w-full lg:w-2/3">
+                <!-- Task Creation Form -->
+                <div class="bg-white rounded-lg shadow-md p-4 mb-6">
+                    <h2 class="text-xl font-bold mb-4 text-terra-800 border-b border-terra-200 pb-2">
+                        Nueva Tarea
+                    </h2>
+                    <form 
+                        hx-post="/api/tasks" 
+                        hx-target="#task-list" 
+                        hx-swap="beforeend"
+                        hx-on::after-request="this.reset(); htmx.trigger(document.body, 'taskChanged')"
+                        class="space-y-4"
+                    >
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="title" class="block text-sm font-medium text-gray-700 mb-1">Título</label>
+                                <input 
+                                    type="text" 
+                                    name="title" 
+                                    id="title" 
+                                    required
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-terra-500 focus:border-transparent"
+                                    placeholder="Título de la tarea"
+                                >
+                            </div>
+                            <div>
+                                <label for="due_date" class="block text-sm font-medium text-gray-700 mb-1">Fecha límite</label>
+                                <input 
+                                    type="date" 
+                                    name="due_date" 
+                                    id="due_date" 
+                                    required
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-terra-500 focus:border-transparent"
+                                >
+                            </div>
+                        </div>
+                        <div>
+                            <label for="description" class="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+                            <textarea 
+                                name="description" 
+                                id="description" 
+                                rows="2" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-terra-500 focus:border-transparent"
+                                placeholder="Descripción de la tarea"
+                            ></textarea>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="priority" class="block text-sm font-medium text-gray-700 mb-1">Prioridad</label>
+                                <select 
+                                    name="priority" 
+                                    id="priority" 
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-terra-500 focus:border-transparent"
+                                >
+                                    <option value="Low">Baja</option>
+                                    <option value="Medium" selected>Media</option>
+                                    <option value="High">Alta</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+                                <select 
+                                    name="status" 
+                                    id="status" 
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-terra-500 focus:border-transparent"
+                                >
+                                    <option value="To-Do" selected>Por hacer</option>
+                                    <option value="In-Progress">En progreso</option>
+                                    <option value="Done">Completada</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="project_id" class="block text-sm font-medium text-gray-700 mb-1">Proyecto (ID)</label>
+                            <input 
+                                type="number" 
+                                name="project_id" 
+                                id="project_id" 
+                                value="1"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-terra-500 focus:border-transparent"
+                            >
+                        </div>
+                        <div class="text-right">
+                            <button 
+                                type="submit" 
+                                class="px-4 py-2 bg-olive-600 hover:bg-olive-700 text-white font-medium rounded-md transition duration-150 ease-in-out"
+                            >
+                                Crear Tarea
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Task List -->
+                <div class="bg-white rounded-lg shadow-md p-4">
+                    <h2 class="text-xl font-bold mb-4 text-terra-800 border-b border-terra-200 pb-2">
+                        Tareas
+                    </h2>
+                    <div
+                        hx-get="/api/tasks"
+                        hx-trigger="load, taskChanged from:body"
+                        hx-indicator=".tasks-loader"
+                    >
+                        <div class="tasks-loader flex justify-center p-4">
+                            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-terra-700"></div>
+                        </div>
+                    </div>
+                    <div id="task-list" class="space-y-4"></div>
+                </div>
+                
+                <!-- AI Assistant -->
+                <div class="bg-white rounded-lg shadow-md p-4 mt-6">
+                    <h2 class="text-xl font-bold mb-4 text-terra-800 border-b border-terra-200 pb-2">
+                        Asistente IA <span id="model-display" class="text-sm font-normal text-gray-500">(QWen-3B-32B)</span>
+                    </h2>
+                    
+                    <!-- Model Selector -->
+                    <div class="mb-4">
+                        <label for="ai-model-selector" class="block text-sm font-medium text-gray-700 mb-1">Modelo de IA:</label>
+                        <select 
+                            id="ai-model-selector" 
+                            name="model" 
+                            class="w-full md:w-auto px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-terra-500 focus:border-transparent"
+                            onchange="toggleModelFeatures()"
+                        >
+                            <option value="qwen-text" selected>QWen-3B-32B (Texto)</option>
+                            <option value="qwen-vision">QWen-2.5-Vision (Texto + Imágenes)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div class="bg-olive-50 rounded-lg p-2 mb-2 text-xs text-olive-800">
+                            <p id="model-capabilities"><strong>Especialización:</strong> Arquitectura, diseño, gestión de proyectos de construcción, normativas colombianas</p>
+                        </div>
+                        
+                        <!-- Image upload section (hidden by default) -->
+                        <div id="image-upload-section" class="hidden">
+                            <label for="image-upload" class="block text-sm font-medium text-gray-700 mb-1">Subir imagen de arquitectura:</label>
+                            <div class="flex items-center space-x-2">
+                                <label class="flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg cursor-pointer hover:bg-gray-200">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                    <span>Seleccionar Imagen</span>
+                                    <input type="file" id="image-upload" name="image" accept="image/*" class="hidden" onchange="previewImage(this)"/>
+                                </label>
+                                <button type="button" id="clear-image" class="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hidden hover:bg-gray-300" onclick="clearImage()">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                            
+                            <!-- Image preview -->
+                            <div id="image-preview-container" class="mt-2 hidden">
+                                <div class="relative">
+                                    <img id="image-preview" class="max-h-60 rounded-lg border border-gray-200" src="" alt="Preview" />
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="ai-chat-container" class="border border-gray-200 rounded-lg p-4 max-h-60 overflow-y-auto">
+                            <div id="ai-chat-messages" class="space-y-3">
+                                <div class="bg-terra-50 p-3 rounded-lg inline-block">
+                                    <p class="text-sm">¡Hola! Soy tu asistente especializado en arquitectura de ana.world. Puedo ayudarte con diseño arquitectónico, normativas de construcción en Colombia, gestión de proyectos, y más. ¿En qué puedo asistirte hoy?</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <form id="ai-form" class="flex flex-col gap-2" hx-post="/api/ai/cerebras" hx-target="#ai-chat-messages" hx-swap="beforeend" hx-indicator="#ai-loading" hx-encoding="multipart/form-data">
+                            <input type="hidden" name="model_type" id="model-type-input" value="qwen-text">
+                            
+                            <div class="flex gap-2">
+                                <input 
+                                    type="text" 
+                                    name="query" 
+                                    id="ai-query" 
+                                    class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-terra-500 focus:border-transparent"
+                                    placeholder="Consulta temas de arquitectura, diseño o gestión de proyectos..."
+                                    required
+                                >
+                                <button 
+                                    type="submit"
+                                    class="px-4 py-2 bg-olive-700 hover:bg-olive-800 text-white font-medium rounded-md flex items-center"
+                                >
+                                    <span>Consultar</span>
+                                </button>
+                                <div id="ai-loading" class="htmx-indicator">
+                                    <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-terra-700"></div>
+                                </div>
+                            </div>
+                        </form>
+                        
+                        <!-- JavaScript for model selection and image handling -->
+                        <script>
+                            function toggleModelFeatures() {
+                                const modelSelector = document.getElementById('ai-model-selector');
+                                const modelType = modelSelector.value;
+                                const imageUploadSection = document.getElementById('image-upload-section');
+                                const modelDisplay = document.getElementById('model-display');
+                                const modelCapabilities = document.getElementById('model-capabilities');
+                                const modelTypeInput = document.getElementById('model-type-input');
+                                
+                                // Update hidden input value
+                                modelTypeInput.value = modelType;
+                                
+                                if (modelType === 'qwen-vision') {
+                                    // Show image upload for vision model
+                                    imageUploadSection.classList.remove('hidden');
+                                    modelDisplay.textContent = '(QWen-2.5-Vision)';
+                                    modelCapabilities.innerHTML = '<strong>Especialización:</strong> Análisis visual de arquitectura, identificación de estilos, detección de problemas estructurales, interpretación de planos y diseños';
+                                } else {
+                                    // Hide image upload for text model
+                                    imageUploadSection.classList.add('hidden');
+                                    modelDisplay.textContent = '(QWen-3B-32B)';
+                                    modelCapabilities.innerHTML = '<strong>Especialización:</strong> Arquitectura, diseño, gestión de proyectos de construcción, normativas colombianas';
+                                    
+                                    // Clear any uploaded image
+                                    clearImage();
+                                }
+                            }
+                            
+                            function previewImage(input) {
+                                const previewContainer = document.getElementById('image-preview-container');
+                                const previewImg = document.getElementById('image-preview');
+                                const clearButton = document.getElementById('clear-image');
+                                
+                                if (input.files && input.files[0]) {
+                                    const reader = new FileReader();
+                                    
+                                    reader.onload = function(e) {
+                                        previewImg.src = e.target.result;
+                                        previewContainer.classList.remove('hidden');
+                                        clearButton.classList.remove('hidden');
+                                    }
+                                    
+                                    reader.readAsDataURL(input.files[0]);
+                                }
+                            }
+                            
+                            function clearImage() {
+                                const imageUpload = document.getElementById('image-upload');
+                                const previewContainer = document.getElementById('image-preview-container');
+                                const clearButton = document.getElementById('clear-image');
+                                
+                                imageUpload.value = '';
+                                previewContainer.classList.add('hidden');
+                                clearButton.classList.add('hidden');
+                            }
+                        </script>
+
+    <footer class="bg-terra-800 text-white p-4 mt-8">
+        <div class="container mx-auto text-center text-sm">
+            <p>&copy; 2025 ana.world - Todos los derechos reservados</p>
+        </div>
+    </footer>
+
+    <!-- Task template for HTMX responses -->
+    <template id="task-template">
+        <div class="task-item bg-terra-50 border border-terra-200 rounded-md p-4">
+            <div class="flex justify-between items-start">
+                <h3 class="text-lg font-semibold text-terra-800"></h3>
+                <div class="flex space-x-2">
+                    <span class="priority-badge px-2 py-1 text-xs font-medium rounded-full"></span>
+                    <span class="status-badge px-2 py-1 text-xs font-medium rounded-full"></span>
+                </div>
+            </div>
+            <p class="text-gray-600 task-description mt-2"></p>
+            <div class="flex justify-between items-center mt-4">
+                <span class="text-sm text-gray-500">
+                    <span class="due-date"></span>
+                </span>
+                <div class="space-x-2">
+                    <button 
+                        class="edit-button px-3 py-1 bg-terra-600 hover:bg-terra-700 text-white text-sm rounded"
+                    >
+                        Editar
+                    </button>
+                    <button 
+                        class="delete-button px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded"
+                    >
+                        Eliminar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <script>
+        // Custom JavaScript to enhance the HTMX functionality
+        document.addEventListener('htmx:afterSwap', function(event) {
+            // Process tasks coming from API
+            if (event.detail.target.id === 'task-list') {
+                const tasks = JSON.parse(event.detail.xhr.responseText);
+                const taskList = document.getElementById('task-list');
+                
+                // Clear existing content
+                taskList.innerHTML = '';
+                
+                // Create task elements
+                tasks.forEach(task => {
+                    // Clone template
+                    const template = document.getElementById('task-template');
+                    const taskElement = template.content.cloneNode(true);
+                    
+                    // Fill in task details
+                    taskElement.querySelector('h3').textContent = task.title;
+                    taskElement.querySelector('.task-description').textContent = task.description;
+                    
+                    // Format date
+                    const dueDate = new Date(task.due_date);
+                    const formattedDate = dueDate.toLocaleDateString('es-ES', {
+                        weekday: 'long', 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric'
+                    });
+                    taskElement.querySelector('.due-date').textContent = 'Fecha límite: ' + formattedDate;
+                    
+                    // Set priority badge
+                    const priorityBadge = taskElement.querySelector('.priority-badge');
+                    priorityBadge.textContent = {
+                        'Low': 'Baja',
+                        'Medium': 'Media',
+                        'High': 'Alta'
+                    }[task.priority] || task.priority;
+                    
+                    priorityBadge.classList.add({
+                        'Low': 'bg-blue-100 text-blue-800',
+                        'Medium': 'bg-yellow-100 text-yellow-800',
+                        'High': 'bg-red-100 text-red-800'
+                    }[task.priority] || 'bg-gray-100 text-gray-800');
+                    
+                    // Set status badge
+                    const statusBadge = taskElement.querySelector('.status-badge');
+                    statusBadge.textContent = {
+                        'To-Do': 'Por hacer',
+                        'In-Progress': 'En progreso',
+                        'Done': 'Completada'
+                    }[task.status] || task.status;
+                    
+                    statusBadge.classList.add({
+                        'To-Do': 'bg-gray-100 text-gray-800',
+                        'In-Progress': 'bg-olive-100 text-olive-800',
+                        'Done': 'bg-green-100 text-green-800'
+                    }[task.status] || 'bg-gray-100 text-gray-800');
+                    
+                    // Set up delete button
+                    const deleteButton = taskElement.querySelector('.delete-button');
+                    deleteButton.setAttribute('hx-delete', `/api/tasks/${task.id}`);
+                    deleteButton.setAttribute('hx-confirm', '¿Estás seguro de que deseas eliminar esta tarea?');
+                    deleteButton.setAttribute('hx-target', 'closest .task-item');
+                    deleteButton.setAttribute('hx-swap', 'outerHTML');
+                    deleteButton.setAttribute('hx-trigger', 'click');
+                    
+                    // Add to task list
+                    taskList.appendChild(taskElement);
+                });
+            }
+            
+            // Process today's tasks
+            if (event.detail.target.id === 'daily-agenda') {
+                const tasks = JSON.parse(event.detail.xhr.responseText);
+                const agenda = document.getElementById('daily-agenda');
+                
+                // Clear existing content
+                agenda.innerHTML = '';
+                
+                if (tasks.length === 0) {
+                    // No tasks today
+                    const emptyMessage = document.createElement('div');
+                    emptyMessage.className = 'text-center py-4 text-gray-500';
+                    emptyMessage.textContent = 'No hay tareas programadas para hoy';
+                    agenda.appendChild(emptyMessage);
+                } else {
+                    // Create task elements for today's agenda
+                    tasks.forEach(task => {
+                        const taskItem = document.createElement('div');
+                        taskItem.className = 'border-l-4 border-terra-500 bg-terra-50 p-3 mb-2';
+                        
+                        const taskTitle = document.createElement('h3');
+                        taskTitle.className = 'font-medium text-terra-800';
+                        taskTitle.textContent = task.title;
+                        
+                        const taskDetails = document.createElement('div');
+                        taskDetails.className = 'flex justify-between text-xs text-gray-500 mt-1';
+                        
+                        const prioritySpan = document.createElement('span');
+                        prioritySpan.className = {
+                            'Low': 'text-blue-600',
+                            'Medium': 'text-yellow-600',
+                            'High': 'text-red-600'
+                        }[task.priority] || 'text-gray-600';
+                        prioritySpan.textContent = {
+                            'Low': 'Prioridad: Baja',
+                            'Medium': 'Prioridad: Media',
+                            'High': 'Prioridad: Alta'
+                        }[task.priority] || `Prioridad: ${task.priority}`;
+                        
+                        const statusSpan = document.createElement('span');
+                        statusSpan.textContent = {
+                            'To-Do': 'Por hacer',
+                            'In-Progress': 'En progreso',
+                            'Done': 'Completada'
+                        }[task.status] || task.status;
+                        
+                        taskDetails.appendChild(prioritySpan);
+                        taskDetails.appendChild(statusSpan);
+                        
+                        taskItem.appendChild(taskTitle);
+                        taskItem.appendChild(taskDetails);
+                        agenda.appendChild(taskItem);
+                    });
+                }
+            }
+            
+            // Handle AI chat responses
+            if (event.detail.target.id === 'ai-chat-messages') {
+                // After AI response is added, clear the input field
+                document.getElementById('ai-query').value = '';
+                
+                // Scroll chat container to bottom
+                const chatContainer = document.getElementById('ai-chat-container');
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+                
+                // Format the user query and AI response for display
+                try {
+                    const response = JSON.parse(event.detail.xhr.responseText);
+                    
+                    // Create user query bubble
+                    const userQuery = document.createElement('div');
+                    userQuery.className = 'bg-olive-100 p-3 rounded-lg inline-block ml-auto';
+                    userQuery.style.float = 'right';
+                    userQuery.style.clear = 'both';
+                    userQuery.style.marginBottom = '8px';
+                    
+                    const userText = document.createElement('p');
+                    userText.className = 'text-sm';
+                    userText.textContent = document.getElementById('ai-query').dataset.lastQuery;
+                    userQuery.appendChild(userText);
+                    
+                    // Create AI response bubble
+                    const aiResponse = document.createElement('div');
+                    aiResponse.className = 'bg-terra-50 p-3 rounded-lg inline-block';
+                    aiResponse.style.clear = 'both';
+                    
+                    const aiText = document.createElement('p');
+                    aiText.className = 'text-sm';
+                    aiText.textContent = response.response;
+                    aiResponse.appendChild(aiText);
+                    
+                    // Add to chat container
+                    document.getElementById('ai-chat-messages').appendChild(aiResponse);
+                } catch (error) {
+                    console.error('Error processing AI response:', error);
+                }
+            }
+        });
+        
+        // Store query text before submission
+        document.getElementById('ai-form').addEventListener('submit', function() {
+            const queryInput = document.getElementById('ai-query');
+            queryInput.dataset.lastQuery = queryInput.value;
+            
+            // Add user query to chat
+            const userQuery = document.createElement('div');
+            userQuery.className = 'bg-olive-100 p-3 rounded-lg inline-block ml-auto';
+            userQuery.style.float = 'right';
+            userQuery.style.clear = 'both';
+            userQuery.style.marginBottom = '8px';
+            
+            const userText = document.createElement('p');
+            userText.className = 'text-sm';
+            userText.textContent = queryInput.value;
+            userQuery.appendChild(userText);
+            
+            document.getElementById('ai-chat-messages').appendChild(userQuery);
+        });
+    </script>
+</body>
+</html>

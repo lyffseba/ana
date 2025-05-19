@@ -9,11 +9,11 @@ This document provides comprehensive technical details about the Cerebras QWen m
 
 ### Model Overview
 
-Ana.world leverages two complementary QWen models:
+Ana.world leverages Cerebras' Qwen 3 32B model for text-based architectural assistance. Vision model support depends on Cerebras API availability.
 
-#### QWen-3B-32B (Text Model)
+#### Qwen 3 32B (Text Model)
 
-The QWen-3B-32B model represents the foundation of our AI assistance system, providing powerful text-based architectural insights.
+The Qwen 3 32B model represents the foundation of our AI assistance system, providing powerful text-based architectural insights.
 
 | Feature | Specification | Notes |
 |---------|---------------|-------|
@@ -25,9 +25,9 @@ The QWen-3B-32B model represents the foundation of our AI assistance system, pro
 | **Languages** | Multilingual | Optimized for English and Spanish |
 | **Domain Expertise** | Architecture, Construction, Urban Planning | Enhanced with specialized context |
 
-#### QWen-2.5-Vision (Vision Model)
+#### Vision Model
 
-The QWen-2.5-Vision model extends our AI capabilities to understand and analyze architectural images, plans, and sketches.
+Cerebras does not currently list a public vision model in the official API reference. For vision capabilities, check the [official Cerebras documentation](https://inference-docs.cerebras.ai/api-reference/models) for availability and correct model IDs.
 
 | Feature | Specification | Notes |
 |---------|---------------|-------|
@@ -41,9 +41,9 @@ The QWen-2.5-Vision model extends our AI capabilities to understand and analyze 
 
 ### Model Capabilities
 
-#### QWen-3B-32B Capabilities
+#### Qwen 3 32B Capabilities
 
-The QWen-3B-32B text model excels in several areas crucial for architectural applications:
+The Qwen 3 32B text model excels in several areas crucial for architectural applications:
 
 1. **Technical Knowledge**
    - Construction materials and techniques
@@ -89,14 +89,13 @@ The QWen-2.5-Vision model provides visual analysis capabilities:
 
 #### Text Model Implementation
 
-Here's how we implement the QWen-3B-32B text model in Go:
+Here's how to implement the Qwen 3 32B model (`qwen-3-32b`) in Go:
 
 ```go
 // Cerebras client for text generation
-func (c *CerebrasClient) GenerateTextResponse(userQuery string, model string, conversationContext []Message) (string, error) {
-    // Create the request body with system context
+func (c *CerebrasClient) GenerateTextResponse(userQuery string, conversationContext []Message) (string, error) {
     requestBody := ChatCompletionRequest{
-        Model:       model, // "cerebras/QWen-3B-32B"
+        Model:       "qwen-3-32b",
         Messages:    append(conversationContext, Message{
             Role:    "user",
             Content: userQuery,
@@ -104,33 +103,35 @@ func (c *CerebrasClient) GenerateTextResponse(userQuery string, model string, co
         Temperature: 0.7,
         MaxTokens:   500,
     }
-    
-    // Convert to JSON
-    requestBytes, err := json.Marshal(requestBody)
-    if err != nil {
-        return "", fmt.Errorf("failed to marshal request: %w", err)
-    }
-    
-    // Create HTTP request
-    req, err := http.NewRequest("POST", c.apiURL, bytes.NewBuffer(requestBytes))
-    if err != nil {
-        return "", fmt.Errorf("failed to create request: %w", err)
-    }
-    
-    // Set headers
-    req.Header.Set("Content-Type", "application/json")
-    req.Header.Set("Authorization", "Bearer "+c.apiKey)
-    
-    // Send request and handle response
-    resp, err := c.httpClient.Do(req)
-    if err != nil {
-        return "", fmt.Errorf("failed to send request: %w", err)
-    }
-    defer resp.Body.Close()
-    
-    // Process and return response...
+    // ... send request as per Cerebras API docs ...
 }
 ```
+
+#### QuickStart Example (Python)
+
+```python
+import os
+from cerebras.cloud.sdk import Cerebras
+
+client = Cerebras(api_key=os.environ.get("CEREBRAS_API_KEY"))
+
+chat_completion = client.chat.completions.create(
+    model="qwen-3-32b",
+    messages=[{"role": "user", "content": "¿Qué es arquitectura sostenible?"}]
+)
+print(chat_completion)
+```
+
+#### Official Model List
+
+For the most up-to-date list of available models and their IDs, always refer to the [Cerebras API reference](https://inference-docs.cerebras.ai/api-reference/models).
+
+As of May 2025, supported model IDs include:
+- `llama-4-scout-17b-16e-instruct`
+- `llama3.1-8b`
+- `llama-3.3-70b`
+- `qwen-3-32b`
+- `deepseek-r1-distill-llama-70b` (private preview)
 
 #### System Context Example
 
@@ -168,7 +169,7 @@ func (c *CerebrasClient) GenerateVisionResponse(userQuery string, imageBase64 st
     
     // Create request with image content
     requestBody := ChatCompletionRequest{
-        Model:       "cerebras/QWen-2.5-Vision",
+        Model:       "(Vision model: see Cerebras docs for availability)",
         Messages:    append(context, Message{
             Role:    "user",
             Content: imageContent,

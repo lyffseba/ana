@@ -547,7 +547,7 @@ func (c *CerebrasClient) GenerateVisionResponse(userQuery string, imageBase64 st
 // GenerateAssistantResponse is a legacy function that calls GenerateTextResponse with default model
 // Kept for backward compatibility
 func (c *CerebrasClient) GenerateAssistantResponse(userQuery string, conversationContext []Message) (string, error) {
-	return c.GenerateTextResponse(userQuery, "cerebras/QWen-3B-32B", conversationContext)
+	return c.GenerateTextResponse(userQuery, "qwen-3-32b", conversationContext)
 }
 
 // getEnv gets an environment variable or returns a default value

@@ -5,33 +5,27 @@ package models
 
 import (
 	"time"
-
-	"gorm.io/gorm"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-// Task represents a task in the system
+// Task represents a task in the system (MongoDB)
 type Task struct {
-	ID          uint           `json:"id" gorm:"primaryKey"`
-	Title       string         `json:"title" gorm:"size:255;not null" binding:"required"`
-	Description string         `json:"description" gorm:"type:text"`
-	DueDate     time.Time      `json:"due_date" gorm:"index"`
-	Priority    string         `json:"priority" gorm:"size:50" binding:"oneof=Low Medium High''"`
-	ProjectID   int            `json:"project_id" gorm:"index"`
-	Status      string         `json:"status" gorm:"size:50;index" binding:"oneof=To-Do In-Progress Done''"`
-	CreatedAt   time.Time      `json:"created_at,omitempty" gorm:"autoCreateTime"`
-	UpdatedAt   time.Time      `json:"updated_at,omitempty" gorm:"autoUpdateTime"`
-	DeletedAt   gorm.DeletedAt `json:"-" gorm:"index"` // Supports soft delete
+	ID          primitive.ObjectID `bson:"_id,omitempty" json:"id"`
+	Title       string             `bson:"title" json:"title" binding:"required"`
+	Description string             `bson:"description" json:"description"`
+	DueDate     time.Time          `bson:"due_date" json:"due_date"`
+	Priority    string             `bson:"priority" json:"priority" binding:"oneof=Low Medium High"`
+	ProjectID   int                `bson:"project_id" json:"project_id"`
+	Status      string             `bson:"status" json:"status" binding:"oneof=To-Do In-Progress Done"`
+	CreatedAt   time.Time          `bson:"created_at" json:"created_at,omitempty"`
+	UpdatedAt   time.Time          `bson:"updated_at" json:"updated_at,omitempty"`
 }
 
-// TableName specifies the table name for the Task model
-func (Task) TableName() string {
-	return "tasks"
-}
 
 // MockTasks provides some sample tasks for development
 var MockTasks = []Task{
 	{
-		ID:          1,
+		ID:          primitive.NewObjectID(),
 		Title:       "Meet Client",
 		Description: "Discuss project requirements for the new residential building",
 		DueDate:     time.Now().AddDate(0, 0, 1), // Tomorrow
@@ -42,7 +36,7 @@ var MockTasks = []Task{
 		UpdatedAt:   time.Now(),
 	},
 	{
-		ID:          2,
+		ID:          primitive.NewObjectID(),
 		Title:       "Finalize Blueprints",
 		Description: "Complete the final version of blueprint documents",
 		DueDate:     time.Now().AddDate(0, 0, 3), // In 3 days
@@ -53,6 +47,7 @@ var MockTasks = []Task{
 		UpdatedAt:   time.Now(),
 	},
 }
+
 
 // GetTasksDueToday returns all tasks that are due today
 func GetTasksDueToday() []Task {

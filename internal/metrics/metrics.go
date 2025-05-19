@@ -4,6 +4,7 @@
 package metrics
 
 import (
+    "fmt"
     "github.com/prometheus/client_golang/prometheus"
     "github.com/prometheus/client_golang/prometheus/promauto"
 )

@@ -6,11 +6,11 @@ package handlers
 import (
 	"log"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/lyffseba/ana/internal/models"
 	"github.com/lyffseba/ana/internal/repositories"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // taskRepo is the repository for task operations
@@ -31,15 +31,15 @@ func GetTasks(c *gin.Context) {
 // GetTaskByID returns a specific task by ID
 func GetTaskByID(c *gin.Context) {
 	idStr := c.Param("id")
-	id, err := strconv.ParseUint(idStr, 10, 32)
+	objectID, err := primitive.ObjectIDFromHex(idStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
 		return
 	}
 
-	task, err := taskRepo.FindByID(uint(id))
+	task, err := taskRepo.FindByID(objectID)
 	if err != nil {
-		log.Printf("Error fetching task with ID %d: %v", id, err)
+		log.Printf("Error fetching task with ID %s: %v", idStr, err)
 		c.JSON(http.StatusNotFound, gin.H{"error": "Task not found"})
 		return
 	}
@@ -68,16 +68,16 @@ func CreateTask(c *gin.Context) {
 // UpdateTask updates an existing task
 func UpdateTask(c *gin.Context) {
 	idStr := c.Param("id")
-	id, err := strconv.ParseUint(idStr, 10, 32)
+	objectID, err := primitive.ObjectIDFromHex(idStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
 		return
 	}
 
 	// First find the existing task
-	existingTask, err := taskRepo.FindByID(uint(id))
+	existingTask, err := taskRepo.FindByID(objectID)
 	if err != nil {
-		log.Printf("Error finding task to update with ID %d: %v", id, err)
+		log.Printf("Error finding task to update with ID %s: %v", idStr, err)
 		c.JSON(http.StatusNotFound, gin.H{"error": "Task not found"})
 		return
 	}
@@ -89,11 +89,11 @@ func UpdateTask(c *gin.Context) {
 	}
 
 	// Ensure ID remains the same
-	existingTask.ID = uint(id)
+	existingTask.ID = objectID
 
 	// Update in the database
 	if err := taskRepo.Update(&existingTask); err != nil {
-		log.Printf("Error updating task with ID %d: %v", id, err)
+		log.Printf("Error updating task with ID %s: %v", idStr, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update task"})
 		return
 	}
@@ -104,23 +104,23 @@ func UpdateTask(c *gin.Context) {
 // DeleteTask removes a task
 func DeleteTask(c *gin.Context) {
 	idStr := c.Param("id")
-	id, err := strconv.ParseUint(idStr, 10, 32)
+	objectID, err := primitive.ObjectIDFromHex(idStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
 		return
 	}
 
 	// Check if task exists
-	_, err = taskRepo.FindByID(uint(id))
+	_, err = taskRepo.FindByID(objectID)
 	if err != nil {
-		log.Printf("Error finding task to delete with ID %d: %v", id, err)
+		log.Printf("Error finding task to delete with ID %s: %v", idStr, err)
 		c.JSON(http.StatusNotFound, gin.H{"error": "Task not found"})
 		return
 	}
 
 	// Delete from database
-	if err := taskRepo.Delete(uint(id)); err != nil {
-		log.Printf("Error deleting task with ID %d: %v", id, err)
+	if err := taskRepo.Delete(objectID); err != nil {
+		log.Printf("Error deleting task with ID %s: %v", idStr, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete task"})
 		return
 	}

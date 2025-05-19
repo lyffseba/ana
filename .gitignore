@@ -1,0 +1,12 @@
+# Ignore .env file containing sensitive credentials
+.env
+
+# Ignore OS-specific files
+.DS_Store
+
+# Ignore Go build outputs
+*.exe
+*.out
+
+# Ignore vendor directory if you are not committing it
+# vendor/

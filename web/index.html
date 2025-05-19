@@ -48,8 +48,11 @@
     <header class="bg-terra-700 text-white p-4 shadow-md">
         <div class="container mx-auto flex justify-between items-center">
             <h1 class="text-2xl font-bold">ana.world</h1>
-            <div class="text-sm">
-                <span class="font-medium">Arquitectura y Proyectos</span>
+            <div class="flex items-center space-x-4">
+                <span class="font-medium text-sm">Arquitectura y Proyectos</span>
+                <a href="/auth/google/login" class="ml-4 px-6 py-3 rounded-lg bg-olive-400 hover:bg-olive-600 text-white font-bold text-lg shadow-lg transition-all duration-200" style="min-width: 160px; text-align: center;">
+                    Go Online
+                </a>
             </div>
         </div>
     </header>
@@ -180,19 +183,14 @@
                         hx-trigger="load, taskChanged from:body"
                         hx-indicator=".tasks-loader"
                     >
-                        <div class="tasks-loader flex justify-center p-4">
-                            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-terra-700"></div>
-                        </div>
-                    </div>
-                    <div id="task-list" class="space-y-4"></div>
-                </div>
-                
                 <!-- AI Assistant -->
                 <div class="bg-white rounded-lg shadow-md p-4 mt-6">
-                    <h2 class="text-xl font-bold mb-4 text-terra-800 border-b border-terra-200 pb-2">
-                        Asistente IA <span id="model-display" class="text-sm font-normal text-gray-500">(QWen-3B-32B)</span>
-                    </h2>
-                    
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold text-terra-800 border-b border-terra-200 pb-2">
+                            Asistente IA <span id="model-display" class="text-sm font-normal text-gray-500">(QWen-3B-32B)</span>
+                        </h2>
+                        <span id="token-counter" class="ml-4 px-3 py-1 rounded bg-olive-200 text-olive-900 font-semibold text-sm">Tokens used: 0</span>
+                    </div>
                     <!-- Model Selector -->
                     <div class="mb-4">
                         <label for="ai-model-selector" class="block text-sm font-medium text-gray-700 mb-1">Modelo de IA:</label>

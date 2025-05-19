@@ -8,8 +8,10 @@ import (
     "fmt"
     "net/http"
     "time"
+    "encoding/json"
 
     "go.uber.org/zap"
+    "github.com/lyffseba/ana/internal/metrics"
 )
 
 // API represents the ANA API service
@@ -17,7 +19,7 @@ type API struct {
     server  *http.Server
     logger  *zap.Logger
     config  *Config
-    metrics *Metrics
+    metrics *metrics.Metrics
 }
 
 // Config holds API configuration
@@ -40,7 +42,7 @@ func NewAPI(config *Config, logger *zap.Logger) (*API, error) {
     api := &API{
         config:  config,
         logger:  logger,
-        metrics: NewMetrics(),
+        metrics: metrics.NewMetrics(),
     }
 
     api.setupServer()
@@ -131,7 +133,7 @@ func (a *API) metricsMiddleware(next http.Handler) http.Handler {
         start := time.Now()
         next.ServeHTTP(w, r)
         
-        a.metrics.RecordRequest(r.Method, r.URL.Path, time.Since(start))
+        a.metrics.RecordRequest(r.Method, r.URL.Path, 200, time.Since(start).Seconds())
     })
 }
 
@@ -191,8 +193,8 @@ func (a *API) handleHealth() http.Handler {
 
 func (a *API) handleMetrics() http.Handler {
     return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-        metrics := a.metrics.GetAll()
-        writeJSON(w, metrics)
+        // TODO: Implement metrics export
+        writeJSON(w, map[string]string{"status": "metrics not implemented"})
     })
 }
 

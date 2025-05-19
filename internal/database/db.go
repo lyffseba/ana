@@ -1,72 +1,52 @@
 // Reference: https://app.warp.dev/session/b660fd8a-f765-449c-a70c-f8c7b971e3c4?pwd=e9ccd7cb-d8be-494e-a2f2-35469f726896
 // Last Updated: Sat May 17 07:34:44 AM CEST 2025
 
-// Package database provides database connection and management functionality
+// Package database provides MongoDB connection and management functionality
 package database
 
 import (
-	"fmt"
+	"context"
 	"log"
 	"os"
+	"sync"
 	"time"
 
-	"github.com/lyffseba/ana/internal/models"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
-// DB is the global database instance
-var DB *gorm.DB
 
-// buildDSN builds a database connection string
-func buildDSN() string {
-	return fmt.Sprintf(
-		"host=%s user=%s password=%s dbname=%s port=%s sslmode=%s TimeZone=UTC",
-		getEnv("DB_HOST", "localhost"),
-		getEnv("DB_USER", "postgres"),  // Changed from ana_user to postgres
-		getEnv("DB_PASSWORD", "postgres"), // Changed to a standard default
-		getEnv("DB_NAME", "postgres"),  // Changed from ana_world to postgres
-		getEnv("DB_PORT", "5432"),
-		getEnv("DB_SSLMODE", "disable"),
-	)
-}
+var (
+	client     *mongo.Client
+	clientOnce sync.Once
+)
 
-// initializeDB is a var so it can be mocked in tests
-var initializeDB = func() (*gorm.DB, error) {
-	dsn := buildDSN()
-	
-	newLogger := logger.New(
-		log.New(os.Stdout, "\r\n", log.LstdFlags),
-		logger.Config{
-			SlowThreshold:             time.Second,
-			LogLevel:                  logger.Info,
-			IgnoreRecordNotFoundError: true,
-			Colorful:                  true,
-		},
-	)
-	
-	return gorm.Open(postgres.Open(dsn), &gorm.Config{
-		Logger: newLogger,
+// InitMongo initializes the MongoDB client (singleton)
+func InitMongo() *mongo.Client {
+	clientOnce.Do(func() {
+		uri := getEnv("MONGODB_URI", "mongodb://localhost:27017/ana_world")
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		var err error
+		client, err = mongo.Connect(ctx, options.Client().ApplyURI(uri))
+		if err != nil {
+			log.Fatalf("Failed to connect to MongoDB: %v", err)
+		}
+		// Ping to ensure connection
+		if err := client.Ping(ctx, nil); err != nil {
+			log.Fatalf("Failed to ping MongoDB: %v", err)
+		}
+		log.Println("MongoDB connection established")
 	})
+	return client
 }
 
-// InitDB initializes the database connection
-func InitDB() {
-	var err error
-	DB, err = initializeDB()
-	if err != nil {
-		log.Printf("Failed to connect to database: %v", err)
-		panic(err)
+// GetCollection returns a MongoDB collection handle
+var defaultDB = "ana_world"
+func GetCollection(dbName, collName string) *mongo.Collection {
+	if dbName == "" {
+		dbName = defaultDB
 	}
-
-	log.Println("Database connection established")
-
-	// Auto migrate the Task model (create table if it doesn't exist)
-	// This is useful for development but in production we should use proper migrations
-	err = DB.AutoMigrate(&models.Task{})
-	if err != nil {
-		log.Fatalf("Failed to auto migrate database: %v", err)
-	}
+	return InitMongo().Database(dbName).Collection(collName)
 }
 
 // getEnv gets an environment variable or returns a default value
@@ -76,4 +56,5 @@ func getEnv(key, defaultValue string) string {
 	}
 	return defaultValue
 }
+
 

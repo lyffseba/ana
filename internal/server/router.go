@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/lyffseba/ana/internal/handlers"
 	"github.com/lyffseba/ana/internal/monitoring"
+	"github.com/lyffseba/ana/internal/googleauth"
 )
 
 // MetricsMiddleware adds request metrics collection
@@ -44,7 +45,7 @@ func MetricsMiddleware() gin.HandlerFunc {
 }
 
 // SetupRouter configures all the routes for the application
-func SetupRouter() *gin.Engine {
+func SetupRouter(authService *googleauth.OAuthService) *gin.Engine {
 	r := gin.Default()
 	
 	// Add metrics middleware
@@ -65,6 +66,13 @@ func SetupRouter() *gin.Engine {
 	// API routes
 	api := r.Group("/api")
 	{
+		// Google OAuth 2.0 routes
+		authGroup := api.Group("/auth/google")
+		{
+			authGroup.GET("/login", authService.HandleLogin)
+			authGroup.GET("/callback", authService.HandleCallback)
+		}
+
 		// Task routes
 		tasks := api.Group("/tasks")
 		{
@@ -141,4 +149,3 @@ func fileExists(path string) bool {
 	info.Close()
 	return true
 }
-

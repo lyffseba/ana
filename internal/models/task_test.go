@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"gorm.io/gorm"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // Test helper function to create a valid task
@@ -140,7 +140,7 @@ func TestTaskTimeHandling(t *testing.T) {
 func TestTaskJSONMarshaling(t *testing.T) {
 	// Create a task with known values
 	originalTask := createValidTask()
-	originalTask.ID = 123
+	originalTask.ID = primitive.NewObjectID()
 	originalTask.CreatedAt = time.Date(2025, 1, 1, 12, 0, 0, 0, time.UTC)
 	originalTask.UpdatedAt = time.Date(2025, 1, 2, 12, 0, 0, 0, time.UTC)
 	
@@ -212,24 +212,6 @@ func TestTaskPriorityValidation(t *testing.T) {
 				"Priority validation for '%s' should be %v", tc.priority, tc.valid)
 		})
 	}
-}
-
-// TestTaskSoftDelete tests soft delete functionality via DeletedAt
-func TestTaskSoftDelete(t *testing.T) {
-	// Create a task
-	task := createValidTask()
-	
-	// Initially DeletedAt should be zero
-	assert.True(t, task.DeletedAt.Time.IsZero(), "Initial DeletedAt should be zero")
-	
-	// Simulate deletion by setting DeletedAt
-	deleteTime := time.Now()
-	task.DeletedAt = gorm.DeletedAt{Time: deleteTime, Valid: true}
-	
-	// Check if deleted
-	assert.True(t, task.DeletedAt.Valid, "Task should be marked as deleted")
-	assert.WithinDuration(t, deleteTime, task.DeletedAt.Time, time.Second, 
-		"DeletedAt should be set to approximately the current time")
 }
 
 // TestTaskEdgeCases tests various edge cases

@@ -10,19 +10,20 @@ import (
     "time"
 
     "github.com/lyffseba/ana/internal/ai/processors"
+    "github.com/lyffseba/ana/internal/metrics"
 )
 
 // AIHandler handles AI-related API endpoints
 type AIHandler struct {
-    manager    *processors.ProcessorManager
-    monitoring *Monitoring
+    manager *processors.ProcessorManager
+    metrics *metrics.Metrics
 }
 
 // NewAIHandler creates a new AI handler
-func NewAIHandler(manager *processors.ProcessorManager) *AIHandler {
+func NewAIHandler(manager *processors.ProcessorManager, metrics *metrics.Metrics) *AIHandler {
     return &AIHandler{
         manager: manager,
-        monitoring: NewMonitoring(),
+        metrics: metrics,
     }
 }
 
@@ -101,7 +102,7 @@ func (h *AIHandler) ResetMetrics(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AIHandler) handleError(w http.ResponseWriter, message string, status int) {
-    h.monitoring.RecordError("ai_api_error", message)
+    h.metrics.RecordError("ai_api_error")
     http.Error(w, message, status)
 }
 
@@ -112,7 +113,5 @@ func (h *AIHandler) respondJSON(w http.ResponseWriter, data interface{}) {
 
 func (h *AIHandler) recordMetrics(operation string, start time.Time) {
     duration := time.Since(start)
-    h.monitoring.RecordDuration("ai_api_duration", duration, map[string]string{
-        "operation": operation,
-    })
+    h.metrics.RecordAIProcessing(operation, duration.Seconds())
 }

@@ -4,22 +4,30 @@
 package main
 
 import (
-	"log"
 	"os"
 	"time"
 
 	"github.com/joho/godotenv"
-	"github.com/lyffseba/ana/internal/database"
+	"github.com/lyffseba/ana/internal/googleauth"
 	"github.com/lyffseba/ana/internal/models"
 	"github.com/lyffseba/ana/internal/monitoring"
 	"github.com/lyffseba/ana/internal/repositories"
 	"github.com/lyffseba/ana/internal/server"
+	"go.uber.org/zap"
 )
 
 func main() {
+	// Initialize Logger
+	logger, err := zap.NewProduction() // Or zap.NewDevelopment() for more verbose logs
+	if err != nil {
+		zap.L().Fatal("can't initialize zap logger", zap.Error(err))
+	}
+	defer logger.Sync() // flushes buffer, if any
+	sugar := logger.Sugar()
+
 	// Load environment variables from .env file
 	if err := godotenv.Load(); err != nil {
-		log.Println("Warning: .env file not found or could not be loaded. Using environment variables.")
+		sugar.Warnw(".env file not found or could not be loaded. Using environment variables.", "error", err)
 	}
 
 	// Set default port if not specified
@@ -28,33 +36,55 @@ func main() {
 		port = "8080"
 	}
 
-	// Initialize database connection
-	log.Println("Initializing database connection...")
-	database.InitDB()
+	// MongoDB: Connection is now handled internally by repositories/database package.
+	sugar.Info("MongoDB connection will be established by repository/database package as needed.")
 
 	// Create task repository and seed initial data if needed
 	taskRepo := repositories.NewTaskRepository()
 	if err := seedInitialData(taskRepo); err != nil {
-		log.Printf("Warning: Failed to seed initial data: %v", err)
+		sugar.Warnf("Failed to seed initial data: %v", err)
 	}
 	
 	// Initialize monitoring
-	log.Println("Initializing monitoring system...")
+	sugar.Info("Initializing monitoring system...")
 	monitoring.Init()
 	
 	// Set up initial monitoring stats
 	setupInitialMonitoringStats()
 
+	// Initialize Google OAuth Service
+	sugar.Info("Initializing Google OAuth Service...")
+	// IMPORTANT: Ensure credentials.json is in the 'config' directory at the project root.
+	// Add 'config/credentials.json' to your .gitignore file!
+	credPath := "config/credentials.json"
+	// This redirectURL must match exactly one of the Authorized redirect URIs in your Google Cloud Console
+	redirectURL := "http://localhost:8080/api/auth/google/callback"
+	scopes := []string{
+		"https://www.googleapis.com/auth/calendar",       // Example: full calendar access
+		"https://www.googleapis.com/auth/gmail.readonly", // Example: read-only gmail access
+		// Add other scopes as needed, e.g., user profile:
+		// "https://www.googleapis.com/auth/userinfo.email",
+		// "https://www.googleapis.com/auth/userinfo.profile",
+	}
+	authService, err := googleauth.NewOAuthService(credPath, redirectURL, logger, scopes)
+	if err != nil {
+		sugar.Fatalf("Failed to initialize Google OAuth Service: %v", err)
+	}
+
 	// Initialize and start the server
-	r := server.SetupRouter()
-	log.Printf("Server starting on port %s...", port)
+	r := server.SetupRouter(authService) // Pass authService to SetupRouter
+	sugar.Infof("Server starting on port %s...", port)
 	if err := r.Run(":" + port); err != nil {
-		log.Fatalf("Failed to start server: %v", err)
+		sugar.Fatalf("Failed to start server: %v", err)
 	}
 }
 
 // seedInitialData adds default data if the database is empty
 func seedInitialData(taskRepo *repositories.TaskRepository) error {
+	// Get a logger instance, assuming sugar is not accessible here or prefer direct logger
+	logger, _ := zap.NewProduction() // Basic logger for this function
+	defer logger.Sync()
+
 	// Check if we have tasks, if not create sample tasks
 	tasks, err := taskRepo.FindAll()
 	if err != nil {
@@ -63,7 +93,7 @@ func seedInitialData(taskRepo *repositories.TaskRepository) error {
 
 	// If no tasks exist, seed with default data
 	if len(tasks) == 0 {
-		log.Println("No tasks found, seeding initial data...")
+		logger.Info("No tasks found, seeding initial data...")
 		
 		// Create sample tasks for development
 		sampleTasks := []models.Task{
@@ -91,7 +121,7 @@ func seedInitialData(taskRepo *repositories.TaskRepository) error {
 			}
 		}
 		
-		log.Println("Initial data seeding completed successfully")
+		logger.Info("Initial data seeding completed successfully")
 	}
 	
 	return nil
@@ -99,6 +129,10 @@ func seedInitialData(taskRepo *repositories.TaskRepository) error {
 
 // setupInitialMonitoringStats initializes monitoring statistics
 func setupInitialMonitoringStats() {
+	// Get a logger instance
+	logger, _ := zap.NewProduction() // Basic logger for this function
+	defer logger.Sync()
+
 	// Initialize AI service stats
 	aiStats := monitoring.ServiceStats{
 		CacheStats: monitoring.CacheStats{
@@ -130,5 +164,5 @@ func setupInitialMonitoringStats() {
 	// Set circuit breaker state
 	monitoring.SetCircuitBreakerState("cerebras", false)
 	
-	log.Println("Monitoring system initialized")
+	logger.Info("Monitoring system initialized with initial stats")
 }

@@ -8,18 +8,18 @@ import (
     "net/http"
     "time"
 
-    "github.com/lyffseba/ana/internal/monitoring"
+    "github.com/lyffseba/ana/internal/metrics"
 )
 
 // Middleware wraps http.Handler with additional functionality
 type Middleware struct {
-    monitoring *monitoring.Service
+    metrics *metrics.Metrics
 }
 
 // NewMiddleware creates a new middleware instance
-func NewMiddleware(monitoring *monitoring.Service) *Middleware {
+func NewMiddleware(metrics *metrics.Metrics) *Middleware {
     return &Middleware{
-        monitoring: monitoring,
+        metrics: metrics,
     }
 }
 
@@ -33,7 +33,7 @@ func (m *Middleware) WithLogging(next http.Handler) http.Handler {
 
         // Log request
         duration := time.Since(start)
-        m.monitoring.RecordHTTPRequest(r.Method, r.URL.Path, duration)
+        m.metrics.RecordRequest(r.Method, r.URL.Path, http.StatusOK, duration.Seconds())
     })
 }
 
@@ -50,7 +50,7 @@ func (m *Middleware) WithMetrics(next http.Handler) http.Handler {
 
         // Record metrics
         duration := time.Since(start)
-        m.monitoring.RecordHTTPMetrics(r.Method, r.URL.Path, wrapped.Status(), duration)
+        m.metrics.RecordRequest(r.Method, r.URL.Path, wrapped.Status(), duration.Seconds())
     })
 }
 

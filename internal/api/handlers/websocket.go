@@ -12,13 +12,14 @@ import (
 
     "github.com/gorilla/websocket"
     "github.com/lyffseba/ana/internal/ai/processors"
+    "github.com/lyffseba/ana/internal/metrics"
 )
 
 // WebSocketHandler handles WebSocket connections
 type WebSocketHandler struct {
-    manager    *processors.ProcessorManager
-    monitoring *Monitoring
-    upgrader   websocket.Upgrader
+    manager  *processors.ProcessorManager
+    metrics  *metrics.Metrics
+    upgrader websocket.Upgrader
 }
 
 // Message represents a WebSocket message
@@ -30,10 +31,10 @@ type Message struct {
 }
 
 // NewWebSocketHandler creates a new WebSocket handler
-func NewWebSocketHandler(manager *processors.ProcessorManager) *WebSocketHandler {
+func NewWebSocketHandler(manager *processors.ProcessorManager, metrics *metrics.Metrics) *WebSocketHandler {
     return &WebSocketHandler{
         manager: manager,
-        monitoring: NewMonitoring(),
+        metrics: metrics,
         upgrader: websocket.Upgrader{
             CheckOrigin: func(r *http.Request) bool {
                 // TODO: Implement proper origin check
@@ -116,7 +117,5 @@ func (h *WebSocketHandler) sendError(conn *websocket.Conn, message string) {
 
 func (h *WebSocketHandler) recordMetrics(operation string, start time.Time) {
     duration := time.Since(start)
-    h.monitoring.RecordDuration("websocket_duration", duration, map[string]string{
-        "operation": operation,
-    })
+    h.metrics.RecordAIProcessing("websocket_"+operation, duration.Seconds())
 }

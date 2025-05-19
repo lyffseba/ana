@@ -9,7 +9,7 @@ import (
     "time"
 
     "github.com/lyffseba/ana/internal/ai"
-    "github.com/lyffseba/ana/internal/monitoring"
+    "github.com/lyffseba/ana/internal/metrics"
 )
 
 // Router handles API routing
@@ -17,16 +17,16 @@ type Router struct {
     mux        *http.ServeMux
     middleware *Middleware
     ai         *AIHandler
-    monitoring *monitoring.Service
+    metricsCollector *metrics.Metrics
 }
 
 // NewRouter creates a new router instance
-func NewRouter(aiService *ai.AIService, monitoring *monitoring.Service) *Router {
+func NewRouter(aiService *ai.AIService, metrics *metrics.Metrics) *Router {
     router := &Router{
         mux:        http.NewServeMux(),
-        middleware: NewMiddleware(monitoring),
-        ai:         NewAIHandler(aiService, monitoring),
-        monitoring: monitoring,
+        middleware: NewMiddleware(metrics),
+        ai:         NewAIHandler(aiService, metrics),
+        metricsCollector: metrics,
     }
 
     router.setupRoutes()
@@ -35,6 +35,10 @@ func NewRouter(aiService *ai.AIService, monitoring *monitoring.Service) *Router 
 
 // setupRoutes configures all API routes
 func (r *Router) setupRoutes() {
+    r.mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
+        // TODO: Replace this with actual session/auth check
+        http.Redirect(w, req, "/auth/google/login", http.StatusFound)
+    })
     // AI routes
     r.handle("/api/v1/ai/process", r.ai.ProcessRequest)
     r.handle("/api/v1/ai/models", r.ai.GetModels)
@@ -79,8 +83,8 @@ func (r *Router) healthCheck(w http.ResponseWriter, req *http.Request) {
 
 // metrics handles metrics endpoint
 func (r *Router) metrics(w http.ResponseWriter, req *http.Request) {
-    metrics := r.monitoring.GetMetrics()
-    respondJSON(w, metrics)
+    // TODO: Implement metrics endpoint using r.metricsCollector
+    respondJSON(w, map[string]string{"status": "metrics not implemented"})
 }
 
 // ServeHTTP implements http.Handler

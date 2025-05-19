@@ -5,32 +5,33 @@ package api
 
 import (
     "context"
-    "fmt"
     "log"
     "net/http"
     "time"
 
     "github.com/lyffseba/ana/internal/ai/processors"
     "github.com/lyffseba/ana/internal/api/handlers"
+    "github.com/lyffseba/ana/internal/metrics"
 )
 
 // Server represents the API server
 type Server struct {
-    server     *http.Server
-    manager    *processors.ProcessorManager
-    monitoring *handlers.Monitoring
+    server  *http.Server
+    manager *processors.ProcessorManager
+    metrics *metrics.Metrics
 }
 
 // NewServer creates a new API server
 func NewServer(addr string, manager *processors.ProcessorManager) *Server {
+    m := metrics.NewMetrics()
     s := &Server{
-        manager:    manager,
-        monitoring: handlers.NewMonitoring(),
+        manager: manager,
+        metrics: m,
     }
 
     // Create handlers
-    aiHandler := handlers.NewAIHandler(manager)
-    wsHandler := handlers.NewWebSocketHandler(manager)
+    aiHandler := handlers.NewAIHandler(manager, m)
+    wsHandler := handlers.NewWebSocketHandler(manager, m)
 
     // Create router
     mux := http.NewServeMux()
@@ -92,7 +93,7 @@ func (s *Server) metricsMiddleware(next http.Handler) http.Handler {
     return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
         start := time.Now()
         next.ServeHTTP(w, r)
-        s.monitoring.RecordHTTPRequest(r.Method, r.URL.Path, time.Since(start))
+        s.metrics.RecordRequest(r.Method, r.URL.Path, 200, time.Since(start).Seconds()) // 200 as placeholder, use actual status if available
     })
 }
 

@@ -18,7 +18,6 @@ import (
 type AIService struct {
     config     *config.Config
     models     map[string]*Model
-    monitoring *monitoring.Service
     mu         sync.RWMutex
 }
 
@@ -31,11 +30,10 @@ type Model struct {
 }
 
 // NewAIService creates a new AI service instance
-func NewAIService(cfg *config.Config, mon *monitoring.Service) *AIService {
+func NewAIService(cfg *config.Config) *AIService {
     return &AIService{
         config:     cfg,
         models:     make(map[string]*Model),
-        monitoring: mon,
     }
 }
 
@@ -61,7 +59,7 @@ func (s *AIService) InitializeModels(ctx context.Context) error {
 // ProcessTask processes an AI task
 func (s *AIService) ProcessTask(ctx context.Context, task *Task) (*Result, error) {
     start := time.Now()
-    defer s.recordMetrics("process_task", start)
+    defer s.recordMetrics("process_task", task.ModelName, start)
 
     model, err := s.getModel(task.ModelName)
     if err != nil {
@@ -70,7 +68,7 @@ func (s *AIService) ProcessTask(ctx context.Context, task *Task) (*Result, error
 
     result, err := s.executeModel(ctx, model, task)
     if err != nil {
-        s.monitoring.RecordError("ai_task_error", err)
+        monitoring.RecordError("ai_service", fmt.Sprintf("model_execution_error_%s", model.Name))
         return nil, fmt.Errorf("failed to execute model: %w", err)
     }
 
@@ -98,10 +96,10 @@ func (s *AIService) initCerebrasModels(ctx context.Context) error {
         {
             Name:     "cerebras_large",
             Version:  "v2",
-            Endpoint: s.config.GetString("ai.cerebras.endpoint"),
+            Endpoint: s.config.AI.Cerebras.Endpoint,
             Parameters: map[string]interface{}{
-                "temperature": 0.7,
-                "max_tokens": 1000,
+                "temperature": s.config.AI.Cerebras.Temperature,
+                "max_tokens":  s.config.AI.Cerebras.MaxTokens,
             },
         },
         // Add more models as needed
@@ -120,7 +118,7 @@ func (s *AIService) initCustomModels(ctx context.Context) error {
         {
             Name:     "ana_base",
             Version:  "v1",
-            Endpoint: s.config.GetString("ai.custom.endpoint"),
+            Endpoint: "http://localhost:placeholder_custom_ai_endpoint",
             Parameters: map[string]interface{}{
                 "batch_size": 32,
                 "timeout":    30,
@@ -161,9 +159,11 @@ func (s *AIService) executeModel(ctx context.Context, model *Model, task *Task) 
     return result, nil
 }
 
-func (s *AIService) recordMetrics(operation string, start time.Time) {
+func (s *AIService) recordMetrics(operation string, modelName string, start time.Time) {
     duration := time.Since(start)
-    s.monitoring.RecordDuration("ai_operation_duration", duration, map[string]string{
-        "operation": operation,
-    })
+    monitoring.RequestDuration.WithLabelValues(
+        "ai_service",
+        operation,
+        modelName,
+    ).Observe(duration.Seconds())
 }

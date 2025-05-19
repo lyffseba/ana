@@ -105,16 +105,23 @@ func (s *AIService) HealthCheck(ctx context.Context) *HealthCheck {
     s.mu.RLock()
     defer s.mu.RUnlock()
 
-    for name, model := range s.models {
+    for name, _ := range s.models { 
         modelHealth := ModelHealth{
             Status:   "healthy",
-            LastUsed: time.Now(), // Replace with actual last used time
+            LastUsed: time.Now(), 
+            // ErrorCount: 0, 
         }
 
         // Get error count from metrics
-        if counter, err := modelExecutionErrors.GetMetricWithLabelValues(name, string(model.Version)); err == nil {
-            modelHealth.ErrorCount = int(counter.Value())
+        // The modelExecutionErrors counter has labels: "model", "type", "error".
+        // Accessing it with only model.Name and model.Version (as type) is a label mismatch.
+        // Also, prometheus.Counter doesn't have an exported Value() method.
+        // Consider alternative ways to track errors for health checks if specific count is needed here.
+        /*
+        if counter, err := modelExecutionErrors.GetMetricWithLabelValues(name, model.Version, "*"); err == nil { 
+            // modelHealth.ErrorCount = int(counter.Value()) 
         }
+        */
 
         health.Models[name] = modelHealth
     }

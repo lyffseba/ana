@@ -42,6 +42,7 @@ func InitMongo() *mongo.Client {
 
 // GetCollection returns a MongoDB collection handle
 var defaultDB = "ana_world"
+
 func GetCollection(dbName, collName string) *mongo.Collection {
 	if dbName == "" {
 		dbName = defaultDB
@@ -56,5 +57,3 @@ func getEnv(key, defaultValue string) string {
 	}
 	return defaultValue
 }
-
-

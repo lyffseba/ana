@@ -86,7 +86,8 @@ func (u *UserRateLimiter) GetLimiter(ip string) *rate.Limiter {
 
 // Global instances
 var (
-	cerebrasClient = ai.NewCerebrasClient()
+	cerebrasClient *ai.CerebrasClient
+	clientOnce     sync.Once
 	rateLimiter    = NewUserRateLimiter()
 
 	// Statistics for monitoring
@@ -97,6 +98,14 @@ var (
 	totalResponseMs float64
 	statsMutex      sync.RWMutex
 )
+
+// getCerebrasClient returns the Cerebras client, initializing it if needed
+func getCerebrasClient() *ai.CerebrasClient {
+	clientOnce.Do(func() {
+		cerebrasClient = ai.NewCerebrasClient()
+	})
+	return cerebrasClient
+}
 
 // RegisterCerebrasRoutes registers all Cerebras AI-related routes
 func RegisterCerebrasRoutes(router *gin.Engine) {
@@ -143,13 +152,14 @@ func GetCerebrasStats(c *gin.Context) {
 		avgResponseTime = totalResponseMs / float64(requestCount)
 	}
 
+	client := getCerebrasClient()
 	c.JSON(http.StatusOK, CerebrasStatsResponse{
-		CacheSize:       cerebrasClient.GetCacheSize(),
+		CacheSize:       client.GetCacheSize(),
 		CacheHitRate:    hitRate,
 		AvgResponseTime: avgResponseTime,
 		RequestCount:    requestCount,
 		ErrorCount:      errorCount,
-		CircuitState:    cerebrasClient.GetCircuitState(),
+		CircuitState:    client.GetCircuitState(),
 	})
 }
 
@@ -245,7 +255,7 @@ func GetCerebrasAIAssistance(c *gin.Context) {
 
 	// Construct the system prompt
 	systemPrompt := fmt.Sprintf(
-		"Eres un asistente especializado en arquitectura para la plataforma ana.world de gestión de proyectos arquitectónicos. %s%sTu conocimiento incluye: 1) Normativas colombianas: NSR-10 (Norma Sismo Resistente), POT de Bogotá, Decreto 1077 de 2015, normas urbanísticas locales; 2) Diseño arquitectónico: metodología BIM, diseño paramétrico, estilos arquitectónicos latinoamericanos, soluciones para clima tropical; 3) Gestión de proyectos: metodologías PMI/PRINCE2 adaptadas a construcción, control de cronogramas, gestión de contratistas, licencias de construcción; 4) Materiales sostenibles: guadua, tierra compactada, sistemas pasivos de climatización, certificación LEED/EDGE para Colombia; 5) Presupuestos: estimación de costos por m², control de presupuestos, análisis de precios unitarios (APU). %s Si te preguntan en inglés, comprende la consulta pero responde en español. %s",
+		"Eres un asistente especializado en arquitectura para la plataforma ana.world de gestión de proyectos arquitectónicos. %s%sTu conocimiento incluye: 1) Normativas colombianas: NSR-10 (Norma Sismo Resistente), POT de Bogotá, Decreto 1077 de 2015, normas urbanísticas locales; 2) Diseño arquitectónico: metodología BIM, diseño paramétrico, estilos arquitectónicos latinoamericanos, soluciones para clima tropical; 3) Gestión de proyectos: metodologías PMI/PRINCE2 adaptadas a construcción, control de cronogramas, gestión de contratistas, licencias de construcción; 4) Materiales sostenibles: guadua, tierra compactada, sistemas pasivos de climatización, certificación LEED/EDGE para Colombia; 5) Presupuestos: estimación de costos por m², control de presupuestos, análisis de precios unitarios (APU). %s Si te preguntan en inglés, comprende la consulta pero responde en español.",
 		noThinkInstructions,
 		responseStyleInstructions,
 		technicalInfoInstructions,
@@ -260,7 +270,8 @@ func GetCerebrasAIAssistance(c *gin.Context) {
 	}
 
 	// Check circuit breaker state before making request
-	if err := cerebrasClient.CheckCircuitBreaker(); err != nil {
+	client := getCerebrasClient()
+	if err := client.CheckCircuitBreaker(); err != nil {
 		log.Printf("Circuit breaker is open: %v", err)
 		c.JSON(http.StatusServiceUnavailable, gin.H{
 			"error": "El servicio de IA está experimentando problemas temporales. Por favor, intenta de nuevo en unos minutos.",
@@ -276,7 +287,7 @@ func GetCerebrasAIAssistance(c *gin.Context) {
 	modelName := "qwen-3-32b"
 
 	// Check cache first
-	cachedResponse, isCached := cerebrasClient.GetCachedResponse(modelName, systemContext)
+	cachedResponse, isCached := client.GetCachedResponse(modelName, systemContext)
 	if isCached {
 		response = cachedResponse
 		fromCache = true
@@ -308,13 +319,13 @@ func GetCerebrasAIAssistance(c *gin.Context) {
 	} else {
 		// Generate new response
 		var err error
-		response, err = cerebrasClient.GenerateTextResponse(query, modelName, systemContext)
+		response, err = client.GenerateTextResponse(query, modelName, systemContext)
 		if err != nil {
 			log.Printf("Error getting text response: %v", err)
 			errorMsg := "Error en el procesamiento de la consulta. Intenta reformularla."
 
 			// Record failure in circuit breaker
-			cerebrasClient.RecordFailure()
+			client.RecordFailure()
 			c.JSON(http.StatusInternalServerError, gin.H{"error": errorMsg})
 			return
 		}

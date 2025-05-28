@@ -39,7 +39,7 @@ func (m *MockCerebrasClient) GenerateAssistantResponse(query string, context []a
 		return m.GenerateAssistantResponseFunc(query, context)
 	}
 	// Default implementation calls GenerateTextResponse with default model
-	return m.GenerateTextResponse(query, "cerebras/QWen-3B-32B", context)
+	return m.GenerateTextResponse(query, "qwen-3-32b", context)
 }
 
 // Define a common interface that both real and mock clients implement
@@ -161,7 +161,7 @@ func createTestHandler(mockClient *MockCerebrasClient) gin.HandlerFunc {
 				return
 			}
 		} else {
-			modelName := "cerebras/QWen-3B-32B"
+			modelName := "qwen-3-32b"
 			response, err = mockClient.GenerateTextResponse(query, modelName, systemContext)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Error en el procesamiento de la consulta. Intenta reformularla."})
@@ -273,8 +273,8 @@ func TestTextModelRequest(t *testing.T) {
 			if query != "test query" {
 				t.Errorf("Expected query 'test query', got '%s'", query)
 			}
-			if model != "cerebras/QWen-3B-32B" {
-				t.Errorf("Expected model 'cerebras/QWen-3B-32B', got '%s'", model)
+			if model != "qwen-3-32b" {
+				t.Errorf("Expected model 'qwen-3-32b', got '%s'", model)
 			}
 			// Check that system context contains architectural info
 			if len(context) == 0 || !strings.Contains(context[0].Content, "arquitectura") {
@@ -377,8 +377,8 @@ func TestVisionModelWithoutImage(t *testing.T) {
 			if query != "vision query without image" {
 				t.Errorf("Expected query 'vision query without image', got '%s'", query)
 			}
-			if model != "cerebras/QWen-3B-32B" {
-				t.Errorf("Expected model 'cerebras/QWen-3B-32B' as fallback, got '%s'", model)
+			if model != "qwen-3-32b" {
+				t.Errorf("Expected model 'qwen-3-32b' as fallback, got '%s'", model)
 			}
 			
 			return "Respuesta de texto porque no hay imagen", nil
@@ -670,7 +670,7 @@ func TestUnsupportedModelType(t *testing.T) {
 	mockClient := &MockCerebrasClient{
 		GenerateTextResponseFunc: func(query string, model string, context []ai.Message) (string, error) {
 			// Should fall back to text model with default model name
-			if model != "cerebras/QWen-3B-32B" {
+			if model != "qwen-3-32b" {
 				t.Errorf("Expected default model, got '%s'", model)
 			}
 			return "Response using default model", nil

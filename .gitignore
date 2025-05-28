@@ -7,6 +7,7 @@
 # Ignore Go build outputs
 *.exe
 *.out
+ana
 
 # Ignore vendor directory if you are not committing it
 # vendor/

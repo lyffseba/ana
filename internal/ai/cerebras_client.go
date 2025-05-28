@@ -1,5 +1,5 @@
 // Reference: https://app.warp.dev/session/b660fd8a-f765-449c-a70c-f8c7b971e3c4?pwd=e9ccd7cb-d8be-494e-a2f2-35469f726896
-// Last Updated: Sat May 17 07:34:44 AM CEST 2025
+// Last Updated: Wed May 28 08:12:00 AM CEST 2025
 
 // Package ai provides AI integration services
 package ai
@@ -26,7 +26,7 @@ import (
 )
 
 const (
-	defaultCerebrasAPIURL = "https://inference.cerebras.ai/v1/chat/completions"
+	defaultCerebrasAPIURL = "https://api.cerebras.ai/v1/chat/completions"
 	defaultTimeout        = 30 * time.Second
 	defaultCacheTTL       = 15 * time.Minute
 	defaultMaxRetries     = 3
@@ -52,28 +52,28 @@ type CircuitBreakerState struct {
 
 // CerebrasClient handles communication with the Cerebras AI API
 type CerebrasClient struct {
-	apiKey            string
-	apiURL            string
-	httpClient        *retryablehttp.Client
-	cache             map[string]CachedResponse
-	cacheTTL          time.Duration
-	cacheMutex        sync.RWMutex
-	circuitBreaker    CircuitBreakerState
+	apiKey             string
+	apiURL             string
+	httpClient         *retryablehttp.Client
+	cache              map[string]CachedResponse
+	cacheTTL           time.Duration
+	cacheMutex         sync.RWMutex
+	circuitBreaker     CircuitBreakerState
 	concurrencyLimiter *semaphore.Weighted
-	metricsEnabled    bool
+	metricsEnabled     bool
 }
 
 // metrics for monitoring client performance
 var (
 	requestDuration = promauto.NewHistogramVec(
 		prometheus.HistogramOpts{
-			Name: "cerebras_request_duration_seconds",
-			Help: "Duration of requests to Cerebras API",
+			Name:    "cerebras_request_duration_seconds",
+			Help:    "Duration of requests to Cerebras API",
 			Buckets: prometheus.DefBuckets,
 		},
 		[]string{"endpoint", "status"},
 	)
-	
+
 	tokenUsage = promauto.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "cerebras_token_usage_total",
@@ -81,21 +81,21 @@ var (
 		},
 		[]string{"type"},
 	)
-	
+
 	cacheHits = promauto.NewCounter(
 		prometheus.CounterOpts{
 			Name: "cerebras_cache_hits_total",
 			Help: "Number of cache hits",
 		},
 	)
-	
+
 	cacheMisses = promauto.NewCounter(
 		prometheus.CounterOpts{
 			Name: "cerebras_cache_misses_total",
 			Help: "Number of cache misses",
 		},
 	)
-	
+
 	errorCounter = promauto.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "cerebras_errors_total",
@@ -106,8 +106,8 @@ var (
 
 	batchSize = promauto.NewHistogram(
 		prometheus.HistogramOpts{
-			Name: "cerebras_batch_size",
-			Help: "Size of batched requests to Cerebras API",
+			Name:    "cerebras_batch_size",
+			Help:    "Size of batched requests to Cerebras API",
 			Buckets: []float64{1, 2, 5, 10, 20},
 		},
 	)
@@ -119,29 +119,117 @@ type Message struct {
 	Content string `json:"content"`
 }
 
+// FunctionParameters represents the parameters for a function
+type FunctionParameters struct {
+	Type       string                 `json:"type,omitempty"`
+	Properties map[string]interface{} `json:"properties,omitempty"`
+	Required   []string               `json:"required,omitempty"`
+}
+
+// Function represents a function that can be called by the model
+type Function struct {
+	Name        string             `json:"name"`
+	Description string             `json:"description,omitempty"`
+	Parameters  FunctionParameters `json:"parameters,omitempty"`
+}
+
+// Tool represents a tool that can be used by the model
+type Tool struct {
+	Type     string   `json:"type"`
+	Function Function `json:"function"`
+}
+
+// ToolChoice represents the tool choice configuration
+type ToolChoice struct {
+	Type     string   `json:"type,omitempty"`
+	Function Function `json:"function,omitempty"`
+}
+
+// JSONSchema represents a JSON schema for structured outputs
+type JSONSchema struct {
+	Name string `json:"name,omitempty"`
+
+	Strict bool                   `json:"strict"`
+	Schema map[string]interface{} `json:"schema"`
+}
+
+// ResponseFormat represents the format of the model response
+type ResponseFormat struct {
+	Type       string      `json:"type"`
+	JSONSchema *JSONSchema `json:"json_schema,omitempty"`
+}
+
 // ChatCompletionRequest represents a request to the Cerebras chat API
 type ChatCompletionRequest struct {
-	Model       string    `json:"model"`
-	Messages    []Message `json:"messages"`
-	Temperature float64   `json:"temperature,omitempty"`
-	MaxTokens   int       `json:"max_tokens,omitempty"`
+	Model          string          `json:"model"`
+	Messages       []Message       `json:"messages"`
+	Temperature    float64         `json:"temperature,omitempty"`
+	MaxTokens      int             `json:"max_completion_tokens,omitempty"`
+	Stream         bool            `json:"stream,omitempty"`
+	Stop           []string        `json:"stop,omitempty"`
+	TopP           float64         `json:"top_p,omitempty"`
+	Seed           int             `json:"seed,omitempty"`
+	Tools          []Tool          `json:"tools,omitempty"`
+	ToolChoice     interface{}     `json:"tool_choice,omitempty"`
+	ResponseFormat *ResponseFormat `json:"response_format,omitempty"`
+	User           string          `json:"user,omitempty"`
+	LogProbs       bool            `json:"logprobs,omitempty"`
+	TopLogProbs    int             `json:"top_logprobs,omitempty"`
+}
+
+// TimeInfo represents timing information in the response
+type TimeInfo struct {
+	QueueTime      float64 `json:"queue_time"`
+	PromptTime     float64 `json:"prompt_time"`
+	CompletionTime float64 `json:"completion_time"`
+	TotalTime      float64 `json:"total_time"`
+	Created        int64   `json:"created"`
+}
+
+// Usage represents token usage information
+type Usage struct {
+	PromptTokens     int `json:"prompt_tokens"`
+	CompletionTokens int `json:"completion_tokens"`
+	TotalTokens      int `json:"total_tokens"`
+}
+
+// FunctionCall represents a function call in the response
+type FunctionCall struct {
+	Name      string `json:"name"`
+	Arguments string `json:"arguments"`
+}
+
+// ToolCall represents a tool call in the response
+type ToolCall struct {
+	ID           string       `json:"id"`
+	Type         string       `json:"type"`
+	FunctionCall FunctionCall `json:"function"`
+}
+
+// ResponseMessage represents a message in the response
+type ResponseMessage struct {
+	Role      string     `json:"role"`
+	Content   string     `json:"content"`
+	ToolCalls []ToolCall `json:"tool_calls,omitempty"`
+}
+
+// Choice represents a completion choice in the response
+type Choice struct {
+	Index        int             `json:"index"`
+	Message      ResponseMessage `json:"message"`
+	FinishReason string          `json:"finish_reason"`
 }
 
 // ChatCompletionResponse represents a response from the Cerebras chat API
 type ChatCompletionResponse struct {
-	ID      string `json:"id"`
-	Object  string `json:"object"`
-	Created int64  `json:"created"`
-	Model   string `json:"model"`
-	Choices []struct {
-		Message      Message `json:"message"`
-		FinishReason string  `json:"finish_reason"`
-	} `json:"choices"`
-	Usage struct {
-		PromptTokens     int `json:"prompt_tokens"`
-		CompletionTokens int `json:"completion_tokens"`
-		TotalTokens      int `json:"total_tokens"`
-	} `json:"usage"`
+	ID                string   `json:"id"`
+	Object            string   `json:"object"`
+	Created           int64    `json:"created"`
+	Model             string   `json:"model"`
+	SystemFingerprint string   `json:"system_fingerprint"`
+	Choices           []Choice `json:"choices"`
+	Usage             Usage    `json:"usage"`
+	TimeInfo          TimeInfo `json:"time_info"`
 }
 
 // NewCerebrasClient creates a new client for the Cerebras API
@@ -170,14 +258,14 @@ func NewCerebrasClient() *CerebrasClient {
 	metricsEnabled := getEnv("ENABLE_CEREBRAS_METRICS", "false") == "true"
 
 	return &CerebrasClient{
-		apiKey:            apiKey,
-		apiURL:            getEnv("CEREBRAS_API_URL", defaultCerebrasAPIURL),
-		httpClient:        retryClient,
-		cache:             make(map[string]CachedResponse),
-		cacheTTL:          parseDuration(getEnv("CEREBRAS_CACHE_TTL", "15m"), defaultCacheTTL),
-		circuitBreaker:    circuitBreaker,
+		apiKey:             apiKey,
+		apiURL:             getEnv("CEREBRAS_API_URL", defaultCerebrasAPIURL),
+		httpClient:         retryClient,
+		cache:              make(map[string]CachedResponse),
+		cacheTTL:           parseDuration(getEnv("CEREBRAS_CACHE_TTL", "15m"), defaultCacheTTL),
+		circuitBreaker:     circuitBreaker,
 		concurrencyLimiter: semaphore.NewWeighted(int64(defaultMaxConcurrent)),
-		metricsEnabled:    metricsEnabled,
+		metricsEnabled:     metricsEnabled,
 	}
 }
 
@@ -200,7 +288,7 @@ func computeCacheKey(model string, messages []Message) string {
 		Model:    model,
 		Messages: messages,
 	}
-	
+
 	jsonData, err := json.Marshal(data)
 	if err != nil {
 		// If marshaling fails, use a simpler approach
@@ -211,7 +299,7 @@ func computeCacheKey(model string, messages []Message) string {
 		}
 		return key
 	}
-	
+
 	hash := md5.Sum(jsonData)
 	return hex.EncodeToString(hash[:])
 }
@@ -223,10 +311,10 @@ func (c *CerebrasClient) GetCachedResponse(model string, messages []Message) (st
 	}
 
 	cacheKey := computeCacheKey(model, messages)
-	
+
 	c.cacheMutex.RLock()
 	defer c.cacheMutex.RUnlock()
-	
+
 	if cached, exists := c.cache[cacheKey]; exists {
 		if time.Now().Before(cached.Expiry) {
 			if c.metricsEnabled {
@@ -235,7 +323,7 @@ func (c *CerebrasClient) GetCachedResponse(model string, messages []Message) (st
 			return cached.Response, true
 		}
 	}
-	
+
 	if c.metricsEnabled {
 		cacheMisses.Inc()
 	}
@@ -247,17 +335,17 @@ func (c *CerebrasClient) SetCachedResponse(model string, messages []Message, res
 	if !isCacheable(messages) {
 		return
 	}
-	
+
 	cacheKey := computeCacheKey(model, messages)
-	
+
 	c.cacheMutex.Lock()
 	defer c.cacheMutex.Unlock()
-	
+
 	c.cache[cacheKey] = CachedResponse{
 		Response: response,
 		Expiry:   time.Now().Add(c.cacheTTL),
 	}
-	
+
 	// Prune expired entries occasionally
 	if rand.Intn(100) < 5 { // 5% chance to clean up on each set
 		c.pruneExpiredCache()
@@ -282,7 +370,7 @@ func isCacheable(messages []Message) bool {
 	if len(messages) == 0 {
 		return false
 	}
-	
+
 	// Check last user message for non-cacheable patterns
 	lastUserMsgIdx := -1
 	for i := len(messages) - 1; i >= 0; i-- {
@@ -291,27 +379,27 @@ func isCacheable(messages []Message) bool {
 			break
 		}
 	}
-	
+
 	if lastUserMsgIdx == -1 {
 		return false
 	}
-	
+
 	userMsg := messages[lastUserMsgIdx].Content
 	nonCacheablePatterns := []string{
-		"random", 
+		"random",
 		"current time",
 		"current date",
 		"today",
 		"time is",
 		"date is",
 	}
-	
+
 	for _, pattern := range nonCacheablePatterns {
 		if strings.Contains(strings.ToLower(userMsg), pattern) {
 			return false
 		}
 	}
-	
+
 	return true
 }
 
@@ -319,13 +407,13 @@ func isCacheable(messages []Message) bool {
 func (c *CerebrasClient) CheckCircuitBreaker() error {
 	c.circuitBreaker.mutex.RLock()
 	defer c.circuitBreaker.mutex.RUnlock()
-	
+
 	if c.circuitBreaker.Open {
 		if time.Now().Before(c.circuitBreaker.OpenUntil) {
 			return fmt.Errorf("circuit breaker is open until %v", c.circuitBreaker.OpenUntil)
 		}
 	}
-	
+
 	return nil
 }
 
@@ -333,7 +421,7 @@ func (c *CerebrasClient) CheckCircuitBreaker() error {
 func (c *CerebrasClient) RecordSuccess() {
 	c.circuitBreaker.mutex.Lock()
 	defer c.circuitBreaker.mutex.Unlock()
-	
+
 	c.circuitBreaker.Failures = 0
 	c.circuitBreaker.Open = false
 }
@@ -342,14 +430,14 @@ func (c *CerebrasClient) RecordSuccess() {
 func (c *CerebrasClient) RecordFailure() {
 	c.circuitBreaker.mutex.Lock()
 	defer c.circuitBreaker.mutex.Unlock()
-	
+
 	c.circuitBreaker.Failures++
 	c.circuitBreaker.LastFailure = time.Now()
-	
+
 	if c.circuitBreaker.Failures >= c.circuitBreaker.ThresholdCount {
 		c.circuitBreaker.Open = true
 		c.circuitBreaker.OpenUntil = time.Now().Add(c.circuitBreaker.ResetTimeout)
-		log.Printf("Circuit breaker opened until %v after %d failures", 
+		log.Printf("Circuit breaker opened until %v after %d failures",
 			c.circuitBreaker.OpenUntil, c.circuitBreaker.Failures)
 	}
 }
@@ -395,7 +483,7 @@ func (c *CerebrasClient) GenerateTextResponse(userQuery string, model string, co
 	if err != nil {
 		return "", fmt.Errorf("failed to create retry request: %w", err)
 	}
-	
+
 	// Make the request
 	resp, err := c.httpClient.Do(retryReq)
 	if err != nil {
@@ -411,7 +499,7 @@ func (c *CerebrasClient) GenerateTextResponse(userQuery string, model string, co
 
 	if resp.StatusCode != http.StatusOK {
 		log.Printf("API error: status code %d, body: %s", resp.StatusCode, string(body))
-		
+
 		// Return user-friendly error messages based on status code
 		switch resp.StatusCode {
 		case http.StatusUnauthorized:
@@ -436,7 +524,13 @@ func (c *CerebrasClient) GenerateTextResponse(userQuery string, model string, co
 		return "", fmt.Errorf("no completions returned")
 	}
 
-	return completionResponse.Choices[0].Message.Content, nil
+	// Extract the response content
+	responseContent := completionResponse.Choices[0].Message.Content
+
+	// Remove thinking tags if present
+	responseContent = removeThinkingTags(responseContent)
+
+	return responseContent, nil
 }
 
 // GenerateVisionResponse generates a response to a query with an image
@@ -470,8 +564,9 @@ func (c *CerebrasClient) GenerateVisionResponse(userQuery string, imageBase64 st
 	})
 
 	// Create the request body - specifically use vision model
+	// Note: Check Cerebras documentation for current vision model availability
 	requestBody := ChatCompletionRequest{
-		Model:       "cerebras/QWen-2.5-Vision",
+		Model:       "llama-4-scout-17b-16e-instruct", // Use appropriate vision-capable model
 		Messages:    messages,
 		Temperature: 0.7,
 		MaxTokens:   800, // Higher for vision descriptions
@@ -498,7 +593,7 @@ func (c *CerebrasClient) GenerateVisionResponse(userQuery string, imageBase64 st
 	if err != nil {
 		return "", fmt.Errorf("failed to create retry request for vision: %w", err)
 	}
-	
+
 	// Make the request
 	resp, err := c.httpClient.Do(retryReq)
 	if err != nil {
@@ -514,7 +609,7 @@ func (c *CerebrasClient) GenerateVisionResponse(userQuery string, imageBase64 st
 
 	if resp.StatusCode != http.StatusOK {
 		log.Printf("Vision API error: status code %d, body: %s", resp.StatusCode, string(body))
-		
+
 		// Return user-friendly error messages based on status code
 		switch resp.StatusCode {
 		case http.StatusUnauthorized:
@@ -547,7 +642,7 @@ func (c *CerebrasClient) GenerateVisionResponse(userQuery string, imageBase64 st
 // GenerateAssistantResponse is a legacy function that calls GenerateTextResponse with default model
 // Kept for backward compatibility
 func (c *CerebrasClient) GenerateAssistantResponse(userQuery string, conversationContext []Message) (string, error) {
-	return c.GenerateTextResponse(userQuery, "cerebras/QWen-3B-32B", conversationContext)
+	return c.GenerateTextResponse(userQuery, "qwen-3-32b", conversationContext)
 }
 
 // getEnv gets an environment variable or returns a default value
@@ -577,9 +672,44 @@ func (c *CerebrasClient) GetCacheSize() int {
 func (c *CerebrasClient) GetCircuitState() string {
 	c.circuitBreaker.mutex.RLock()
 	defer c.circuitBreaker.mutex.RUnlock()
-	
+
 	if c.circuitBreaker.Open {
 		return "open"
 	}
 	return "closed"
+}
+
+// removeThinkingTags removes <think>...</think> tags and their content from the response
+func removeThinkingTags(content string) string {
+	// Log the original content for debugging
+	log.Printf("Original content length: %d, starts with: %.50s", len(content), content)
+
+	// Check if the content contains thinking tags
+	thinkStart := strings.Index(content, "<think>")
+	if thinkStart == -1 {
+		return content // No thinking tags found
+	}
+
+	thinkEnd := strings.Index(content, "</think>")
+	if thinkEnd == -1 {
+		return content // No closing tag found
+	}
+
+	// Log the thinking section for debugging
+	log.Printf("Found thinking tags from position %d to %d", thinkStart, thinkEnd+8)
+
+	// Remove the thinking section (including tags)
+	beforeThink := content[:thinkStart]
+	afterThink := ""
+	if thinkEnd+8 < len(content) {
+		afterThink = content[thinkEnd+8:] // 8 is the length of "</think>"
+	}
+
+	result := beforeThink + afterThink
+
+	// Log the result for debugging
+	log.Printf("After removing thinking tags, content length: %d", len(result))
+
+	// Recursively check for more thinking tags
+	return removeThinkingTags(result)
 }
